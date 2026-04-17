@@ -1,0 +1,180 @@
+{
+  "Basic Clinical Background": {
+    "Age": "",
+    "Sex": "",
+    "Smoking History": {
+      "Smoking Status": "",
+      "Smoking Description": ""
+    },
+    "Occupational History": {
+      "Occupation": "",
+      "Description of Occupational Exposure": ""
+    },
+    "Environmental and Antigen Exposure History": {
+      "Bird or Poultry Exposure": "",
+      "Mold or Damp Environment Exposure": "",
+      "Dust Exposure": "",
+      "Pet Contact": "",
+      "Recent Renovation or Move to a New Home": "",
+      "Other Suspected Exposures": ""
+    },
+    "Past Significant Medical History": {
+      "Hypertension": null,
+      "Diabetes Mellitus": null,
+      "Coronary Artery Disease or Cardiovascular Disease": "",
+      "Previous Pulmonary Diseases": "",
+      "Previous Rheumatic or Autoimmune Diseases": "",
+      "Other Significant Medical History": ""
+    },
+    "Relevant Family History": {
+      "Family History of Pulmonary Disease": "",
+      "Family History of Rheumatic or Autoimmune Disease": "",
+      "Other Relevant Family History": ""
+    }
+  },
+
+  "Symptoms and Disease Course": {
+    "Chief Complaint": "",
+    "Respiratory Symptoms": {
+      "Cough": "",
+      "Sputum Production": "",
+      "Chest Tightness": "",
+      "Shortness of Breath or Dyspnea": "",
+      "Chest Pain": "",
+      "Hemoptysis": "",
+      "Fever": ""
+    },
+    "Extrapulmonary Manifestations": {
+      "Dry Mouth or Dry Eyes": "",
+      "Joint Pain or Morning Stiffness": "",
+      "Myalgia or Muscle Weakness": "",
+      "Raynaud Phenomenon": "",
+      "Skin Rash": "",
+      "Mechanic's Hands or Gottron's Sign and Other Myositis-Related Manifestations": "",
+      "Other Extrapulmonary Manifestations": ""
+    },
+    "Course Characteristics": {
+      "Onset Pattern": "",
+      "Progressive Worsening": "",
+      "Acute Exacerbation": "",
+      "Summary of Present Illness": ""
+    }
+  },
+
+  "Autoimmune-Related Clues": {
+    "Summary of Clinical Clues": "",
+    "Serologic Tests": {
+      "ANA": "",
+      "ENA or Autoantibody Panel": "",
+      "ANCA and Related Antibodies": "",
+      "RF or CCP": "",
+      "Myositis Antibody Panel": "",
+      "Complement or Immunoglobulins": "",
+      "Other Immunologic Tests": ""
+    },
+    "Evidence Supporting a Definite Connective Tissue Disease": "",
+    "Rheumatologic or Autoimmune Tendency": ""
+  },
+
+  "Imaging": {
+    "Summary of Chest CT or HRCT": "",
+    "Distribution of Lesions": "",
+    "Key Imaging Findings": {
+      "Reticulation": "",
+      "Ground-Glass Opacity": "",
+      "Honeycombing": "",
+      "Traction Bronchiectasis": "",
+      "Consolidation": "",
+      "Nodules": "",
+      "Mosaic Attenuation or Air Trapping": "",
+      "Pleural Effusion": "",
+      "Mediastinal or Hilar Lymph Nodes": "",
+      "Other Important Findings": ""
+    },
+    "Imaging Pattern Tendency": {
+      "UIP Pattern Tendency": "",
+      "NSIP Pattern Tendency": "",
+      "OP Pattern Tendency": "",
+      "HP Pattern Tendency": "",
+      "Other Patterns or Atypical Findings": ""
+    }
+  },
+
+  "Pulmonary Function and Oxygenation": {
+    "Pulmonary Function Summary": {
+      "Ventilatory Function": "",
+      "Diffusion Function": "",
+      "Lung Volumes or Other Results": ""
+    },
+    "Hypoxemia and Respiratory Support": {
+      "Presence of Hypoxemia": "",
+      "Summary of Blood Gas Analysis": "",
+      "Summary of Oxygenation Status": "",
+      "Presence of Respiratory Failure": "",
+      "Oxygen Therapy or Respiratory Support Modality": ""
+    }
+  },
+
+  "Laboratory and Other Ancillary Examinations": {
+    "Inflammation and Infection-Related Findings": {
+      "Complete Blood Count Summary": "",
+      "CRP_ESR_PCT_IL6_etc": "",
+      "Microbiological Tests": "",
+      "Viral or Fungal-Related Tests": "",
+      "Other Infectious Clues": ""
+    },
+    "Biochemistry and Organ Function": {
+      "Liver and Renal Function": "",
+      "Albumin": "",
+      "Cardiac Biomarkers or NT_proBNP": "",
+      "D_Dimer": "",
+      "Other Important Results": ""
+    },
+    "Cardiac and Vascular Assessment": {
+      "Echocardiography Summary": "",
+      "Clues Suggestive of Pulmonary Hypertension": "",
+      "Clues Suggestive of Pulmonary Embolism": "",
+      "Other Circulatory System Assessments": ""
+    }
+  },
+
+  "BAL_Pathology_and_Other_Key_Evidence": {
+    "Bronchoscopy Summary": "",
+    "BAL Results Summary": "",
+    "Pathology Summary": "",
+    "Other Key Evidence Helpful for Classification": ""
+  },
+
+  "Integrated Clinical Assessment": {
+    "Whether Fibrotic ILD Is Present": "",
+    "Etiologic or Classification Tendency": {
+      "CTD_ILD_Tendency": "",
+      "IPF_or_Other_IIP_Tendency": "",
+      "HP_Tendency": "",
+      "OP_Tendency": "",
+      "Infection_or_Other_Alternative_Explanations": "",
+      "Possibility_of_Unclassifiable_ILD": ""
+    },
+    "Current Major Comorbid or Concurrent Problems": [
+      ""
+    ],
+    "Current Clinical Diagnosis or Preliminary Diagnosis": [
+      ""
+    ]
+  },
+
+  "Treatment Course and Response": {
+    "Previous Main Treatments": "",
+    "Main Treatments During This Hospitalization": {
+      "Anti_Infective_Treatment": "",
+      "Glucocorticoid_Treatment": "",
+      "Immunosuppressive_Treatment": "",
+      "Antifibrotic_Treatment": "",
+      "Anticoagulation_Treatment": "",
+      "Oxygen_Therapy_or_Respiratory_Support": "",
+      "Other_Treatments": ""
+    },
+    "Changes After Treatment": "",
+    "Current Disease Status": ""
+  }
+}

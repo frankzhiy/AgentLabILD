@@ -1,0 +1,23 @@
+# 环境与密钥
+.env
+__pycache__/
+*.pyc
+*.pyo
+
+# 实验输出
+results/
+
+# 数据集（可能较大，使用 git-lfs 或 gitignore）
+data/cases/
+data/ground_truth/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# 缓存
+.llm_cache/
