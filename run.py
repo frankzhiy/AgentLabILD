@@ -1,11 +1,24 @@
+"""CLI entrypoint for the reset skeleton platform."""
+
+from __future__ import annotations
+
+import sys
+from pathlib import Path
+
+# Ensure local package imports work when run.py is executed directly.
+ROOT = Path(__file__).resolve().parent
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
 from src.runner import ExperimentRunner
 
-runner = ExperimentRunner("configs/experiments/baseline_3agent.yaml")
-result = runner.run()
 
-print(f"\n=== 实验完成 ===")
-print(f"病例数: {len(result.case_results)}")
-print(f"总 token: {result.total_token_usage.total_tokens}")
-for cr in result.case_results:
-    print(f"\n--- {cr.case_id} ---")
-    print(cr.final_output[:300])  # 只打印前 300 字符
+def main() -> None:
+    """Run the minimal placeholder runner and print its status message."""
+
+    result = ExperimentRunner().run()
+    print(result["message"])
+
+
+if __name__ == "__main__":
+    main()

@@ -1,141 +1,221 @@
-# ILD-MDT Multi-Agent Research Platform — Copilot Instructions
+# AgentLabILD / ILD-MDT Research Platform — Repository Instructions
 
-## 一、ILD-MDT 领域知识
+## 1) Project identity
 
-### 什么是 ILD
+This repository is a **research platform**, not a product demo.
 
-间质性肺病（Interstitial Lung Disease, ILD）是一大类以肺间质弥漫性炎症和/或纤维化为主要特征的疾病。ILD 的诊断极为复杂：
+Its purpose is to study **mechanism-governed medical multi-agent reasoning** in the ILD MDT setting.
 
-- **亚型众多**：包括特发性肺纤维化（IPF）、非特异性间质性肺炎（NSIP）、机化性肺炎（OP）、结缔组织病相关 ILD（CTD-ILD）、过敏性肺炎（HP）等数十种亚型
-- **各亚型治疗方案截然不同**：如 IPF 使用抗纤维化药物，CTD-ILD 使用免疫抑制剂，误诊可能造成严重后果
-- **单一证据源通常不足以确诊**：需要综合临床表现、影像学特征、病理检查等多维信息
+The project does **not** center on “making agents look more like doctors”.
+The current research center is:
 
-### 什么是 MDT
+- explicit hypothesis state management
+- controlled information sharing
+- typed conflict explicitation and escalation
+- local belief revision under new evidence
+- arbitration and safety gate
 
-MDT（Multi-Disciplinary Team）多学科会诊是 ILD 诊断的金标准方法。典型的 ILD-MDT 角色：
-
-- **呼吸科医生 (Pulmonologist)**：综合分析临床症状、既往史、吸烟史、职业/环境暴露史、用药史、肺功能检查结果，进行 CRP 综合推理
-- **影像科医生 (Radiologist)**：基于 HRCT 文字描述报告，判断影像学模式（UIP、NSIP）、病变分布特征、特征性征象
-- **病理科医生 (Pathologist)**：基于肺活检或 BALF 结果，分析组织病理模式
-- **风湿免疫科医生 (Rheumatologist)**：分析自身抗体谱和系统性症状，判断是否存在结缔组织病
-- **MDT 主持人 (Moderator)**：协调讨论流程，综合各方意见，推动达成诊断共识
-
-**重要**：本项目聚焦于**基于文本信息的临床推理**，所有影像学和病理学信息以文字描述报告的形式输入，不涉及图像处理。
-
-### MDT 关键特征
-
-1. **天然的多角色分工**：每个专科有明确的专业边界和分析视角
-2. **证据优先级层级**（非对称性）：病理 > 高特异性影像征象 > 特异性免疫学证据 > 环境暴露史 > 一般临床症状
-3. **排除性证据**：某些阴性结果具有强排除意义（如 ANA 全阴性可降低 CTD-ILD 可能性）
-4. **合理冲突**：不同专科可能因视角不同产生合理分歧，冲突解决本身是诊断推理核心
-5. **信息不对称**：不同专科看到的证据不同，需要跨专科整合
-
-### ILD 病例数据结构
-
-- 基本信息：年龄、性别、吸烟史、职业暴露
-- 主诉与现病史：症状描述、持续时间、进展特征
-- 体格检查：双肺听诊、杵状指、皮肤表现等
-- 实验室检查：血气分析、自身抗体谱、血常规、炎症指标
-- 肺功能：FVC、DLCO 及其变化趋势
-- 影像学报告（文字描述）：HRCT 征象文字报告
-- 病理报告（如有）：活检或 BALF 结果文字报告
-- 既往诊断和治疗
-- **金标准**：MDT 共识诊断（亚型分类 + 置信度 + 治疗方向）
+When there is tension between “adding another agent” and “strengthening a system mechanism”, prefer the mechanism.
 
 ---
 
-## 二、五大研究切入点
+## 2) Domain scope
 
-1. **临床推理任务的 Agent 化分解**：不同维度的分解策略（按角色 / 按证据来源 / 按推理功能）对系统表现的影响
-2. **Agent 间通信协议与共享表示**：交换信息的方式和格式如何影响协作质量（自由文本 vs 结构化通信、通信轮次、误差回声）
-3. **冲突协商与仲裁机制**：冲突检测方式（LLM 语义 / 规则 / 混合）与仲裁方式（投票 / 加权 / meta-reasoner / 辩论）的对比
-4. **责任追踪与错误归因**：agent-level audit trail、decision provenance、自动 blame assignment
-5. **多智能体协作收益的边界条件**：多 agent 在什么条件下优于单体、什么条件下退化——参数化实验与 ablation study
+This project focuses on **text-based clinical reasoning** for ILD MDT.
 
----
+Important scope constraints:
 
-## 三、平台设计原则
+- no medical image processing
+- no pathology slide processing
+- radiology and pathology inputs are text reports only
+- the goal is clinically reviewable reasoning state, not polished prose
 
-1. **一切皆可配置，一切皆为实验变量**：换一个 YAML 文件就是换一个实验，不改一行代码
-2. **只定义接口，不预设实现**：核心代码只提供 ABC + Registry Pattern + Trace 框架，具体策略由研究者逐步填充
-3. **Prompt 是外部资源，不是代码**：存储在独立 Markdown 文件中，通过配置引用，支持模板变量和版本管理
-4. **完整的可观测性**：agent 级、通信级、pipeline 级、冲突仲裁级、实验级全链路 trace，结构化 JSON 存储
-5. **可复现性**：配置文件自描述、LLM response cache、seed/temperature 可控
-6. **只做后端，不做前端**：CLI + Python API + JSON/JSONL 输出 + Jupyter Notebook 分析
-7. **增量构建，先跑通再完善**：先端到端跑通，接口设计为扩展留空间
+All implementations should support staged clinical reasoning such as:
+
+- initial review
+- supplementary examination
+- follow-up review
+- revised working diagnosis
 
 ---
 
-## 四、技术栈
+## 3) Core research principle
 
-| 组件 | 选择 | 理由 |
-|------|------|------|
-| 语言 | Python 3.11+ | 生态成熟，LLM 工具链完善 |
-| 包管理 | uv + pyproject.toml | 现代 Python 项目标准 |
-| 流程编排 | LangGraph (StateGraph) | 灵活有向图编排，支持并行/条件/循环 |
-| LLM 调用 | OpenAI Python SDK | 统一调用多 provider（GPT、Claude、DeepSeek、Gemini、Qwen） |
-| 数据模型 | Pydantic v2 | 类型安全校验，配置解析，trace 结构 |
-| 配置管理 | YAML + .env | YAML 可读性强，适合复杂嵌套实验参数 |
-| 数据格式 | JSONL | 流式读写，逐行处理 |
-| 缓存 | 基于文件的 JSON cache（按输入 hash 索引） | 轻量级，免外部依赖，保证可复现 |
-| 测试 | pytest | 标准，fixture + 参数化 |
-| 类型标注 | 完善 type hints 全覆盖 | IDE 支持和代码质量 |
-| 分析 | Pandas + Jupyter Notebook | 灵活的数据分析和可视化 |
+Mechanism first, agent second.
 
-### LangGraph 使用要点
-- 仅使用 StateGraph，不依赖 LangGraph Studio/LangSmith 云端服务
-- Pipeline 图结构通过实验配置动态构建（`build_graph_from_config`）
-- State 定义使用 TypedDict + Annotated reducers
-- 使用 `Send` API 支持动态并行（parallel fan-out）
+Prefer implementing:
 
----
+- explicit state objects
+- validators
+- write gates
+- typed protocols
+- audit logs
+- deterministic constraints
+- versioned state transitions
 
-## 五、环境约束
+over implementing:
 
-- **使用 `MDTAgent` conda 环境**，不创建新虚拟环境
-- 终端命令前先执行：`conda activate MDTAgent`
-- 项目根目录：当前工作区
+- extra role prompts
+- longer prompt instructions
+- free-text inter-agent discussion
+- hidden control logic inside prompts
+- “smart” agents that silently decide system behavior
+
+Prompting may assist generation, but core control must be enforced by executable external mechanisms.
 
 ---
 
-## 六、工作约束
+## 4) Current implementation priority
 
-1. **不做前端**：纯 Python 后端 + CLI + Notebook
-2. **成本敏感**：必须有 LLM response cache，避免相同输入重复调用
-3. **支持多 LLM provider**：通过 OpenAI 兼容接口 + 代理服务（如 ChatAnywhere）
-4. **英文部分**：prompt 和 agent 输出以英文为主（所有运行时提示词、角色定义用英文）
-5. **中文部分**：项目代码注释、说明文档等工程相关内容用中文，方便后期人类审阅
-6. **代码简洁**：不过度设计，先有最小可用版本，按需扩展
-7. **接口先行**：先确定 ABC 和数据模型，实现类逐步添加
-8. **测试覆盖**：核心模块（配置解析、pipeline 构建、cache）要有 unit test
-9. **开发日志**：项目根目录维护 `docs/devlog.md`，每完成一个功能模块或重要改动后追加记录
+The current development priority is **Phase 1: explicit state externalization**.
+
+Implementation order should usually be:
+
+1. schema
+2. provenance
+3. validators
+4. state writer
+5. storage / versioning
+6. adapter agents
+7. orchestration integration
+
+Do not jump directly to rich multi-agent dialogue, arbitration logic, or conflict resolution before the state layer is stable.
 
 ---
 
-## 七、协作规范
+## 5) Hard invariants for Phase 1 and state-related code
 
-### 规范 1：教学文档（必须执行）
+For any code touching schema, state, validators, writer, storage, or extraction:
 
-每次完成代码修改后，**必须**在 `teach/` 文件夹下新建一份教学文档（Markdown 格式，文件名反映本次任务，如 `teach/add_pathologist_agent.md`）。
+- no free-text diagnostic conclusion may be written directly into shared state
+- every claim must reference evidence ids, not informal prose evidence
+- every evidence object must include provenance
+- every state object must be stage-aware
+- every persistent state write must pass validation first
+- unsupported claims must be blocked or explicitly reported
+- state must support future versioned revision
+- case structuring code must not output final diagnosis
+- evidence extraction code must not silently merge into diagnosis reasoning
+- if uncertainty exists, preserve uncertainty explicitly rather than forcing a single conclusion
 
-教学文档的内容要求：
+If a requested change conflicts with these invariants, preserve the invariants.
 
-1. **分析路径**：接到需求后，从哪个文件 / 哪段代码开始分析，为什么从那里入手
-2. **改动清单**：列出所有新增 / 修改的文件，每处改动说明"改了什么、为什么这么改"
-3. **连接原理**：新代码是如何被现有框架发现和调用的——具体到机制层面（如注册表装饰器如何被触发、YAML 配置如何映射到代码、state 中的数据如何流向下游节点……）
-4. **运行时数据流**：代码跑起来后，数据是怎么一步步流动的——从输入到输出的完整路径（如：病例文本从 state 被取出 → 拼进 prompt → 发给 LLM → 响应包成 AgentOutput → 写回 state → 被下游节点读取）。这和"连接原理"不同：连接原理是框架怎么**找到**代码（静态），数据流是代码跑起来后数据怎么**流经**代码（动态）
-5. **自助修改指南**：如果用户将来想做类似的修改（或对本次改动做微调），具体要动哪些地方、注意什么
-6. **验证方法**：改完代码后怎么确认改对了——该跑哪条命令、期望看到什么输出、如果报错最可能是什么原因
-7. **概念补充**：本次改动涉及的编程概念（如设计模式、Python 语法特性、LangGraph API 等），用通俗语言解释。每次都写，宁可多写用户跳过，不可少写让用户卡住
+---
 
-**目的**：不只是"帮用户写完代码"，而是让用户看完教学文档后，下次遇到类似需求能自己动手。
+## 6) Engineering principles
 
-### 规范 2：乐高思维 —— 只生产零件，不替用户拼装
+- backend only
+- Python 3.11+
+- configuration-first design
+- prompt files are external resources, not embedded code
+- reproducibility matters
+- traceability matters
+- keep modules small and composable
+- prefer explicit names over clever abstractions
+- prefer Pydantic models and explicit validation over loose dictionaries
+- do not overengineer before a measured need appears
+- keep backward compatibility when reasonable
 
-所有代码修改必须遵循**最小交付、不越界集成**原则：
+---
 
-1. **只做被要求的事**：用户让建一个 agent，就只建这个 agent（类文件 + prompt 模板 + 注册）。不要擅自把它塞进某个实验配置 YAML、不要擅自修改现有 pipeline 拓扑、不要擅自调整其他 agent 的行为
-2. **占位符优于假数据**：prompt 模板中属于用户领域判断的内容（如具体的分析指令、角色设定细节），用清晰的占位符或模板示例标注，注释说明"使用前请替换为你的实际内容"
-3. **交付时说明集成方式**：告诉用户"这个零件做好了，注册名是 `xxx`。你要使用它时，需要去 YAML 的哪个字段引用它，相关的 prompt 模板中哪些占位符需要你填写"
-4. **不做未被要求的关联修改**：比如新增一个通信协议时，不要顺手把现有实验配置切换成新协议；新增一个评估指标时，不要自动把它加到某个实验的 `evaluation.metrics` 列表里
-5. **适用于所有改动**：这不只是针对 agent / 冲突检测 / 通信协议的规则，而是一种通用原则——任何新增功能、模块、策略、配置项，都遵循"独立生产、用户决定集成"的思路
+## 7) Modification policy
+
+Only implement the requested unit of work.
+
+Do not silently:
+
+- change pipeline topology
+- register new components into experiment YAML unless explicitly asked
+- modify unrelated agents
+- replace old behavior without a compatibility path
+- add front-end code
+- convert mechanism work into prompt-only work
+
+Prefer delivering isolated reusable parts with clear integration instructions.
+
+---
+
+## 8) Validation requirements
+
+For every non-trivial change:
+
+- add or update tests
+- explain how to validate the change
+- append a short entry to `docs/devlog.md`
+- add a teaching note under `teach/`
+- document expected runtime data flow when relevant
+
+When implementing a mechanism, tests are mandatory.
+When implementing only prompts or examples, explain why no mechanism-level test is possible.
+
+---
+
+## 9) Output style for generated code
+
+- runtime prompts and role prompts may use English
+- engineering docs, comments, and teaching notes should primarily use Chinese
+- code should be readable and explicit
+- avoid magical helper layers unless they reduce real complexity
+- prefer deterministic post-processing when possible
+- avoid giant files; split by responsibility
+
+---
+
+## 10) Phase 1 interpretation
+
+Interpret Phase 1 as building the **explicit state layer** for staged ILD reasoning.
+
+Preferred building blocks include:
+
+- `StageContext`
+- `EvidenceAtom`
+- `ClaimReference`
+- `HypothesisState`
+- `ActionCandidate`
+- `HypothesisBoardInit`
+- `StateValidationReport`
+- `StateEvent`
+
+The main deliverable is **not** “an extraction agent”.
+The main deliverable is a validated state representation that later phases can safely build on.
+
+---
+
+## 11) Research framing guidance
+
+Treat the following as distinct:
+
+- clinical concept
+- system mechanism
+- evaluation metric
+- engineering convenience
+
+Do not collapse them into one object.
+
+Examples:
+
+- “premature closure” is a clinical / cognitive failure concept
+- “top-k differential preservation” is a system mechanism
+- “differential retention rate” is an evaluation metric
+- “cached LLM call” is an engineering convenience
+
+When implementing, keep these layers conceptually separate.
+
+---
+
+## 12) What Copilot should optimize for
+
+Optimize for:
+
+- auditability
+- traceability
+- staged reasoning compatibility
+- future belief revision
+- safe integration into later phases
+
+Do not optimize only for:
+
+- short demos
+- minimal token count
+- elegant free-text output
+- superficially complete single-pass diagnosis
