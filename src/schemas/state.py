@@ -1,11 +1,21 @@
-"""State schema placeholders for future ILD-MDT mechanism phases.
+"""Compatibility exports for shared state schema modules.
 
-This module intentionally avoids implementing Phase 1 logic.
+Phase 1-1 introduces a typed StageContext in src.schemas.stage while keeping
+legacy import stability for shallow skeleton state references.
 """
 
 from __future__ import annotations
 
 from typing import TypedDict
+
+from .stage import (
+    InfoModality,
+    StageContext,
+    StageFocus,
+    StageType,
+    TriggerType,
+    VisibilityPolicyHint,
+)
 
 
 class SkeletonState(TypedDict, total=False):
@@ -13,3 +23,14 @@ class SkeletonState(TypedDict, total=False):
 
     stage_id: str
     note: str
+
+
+__all__ = [
+    "InfoModality",
+    "SkeletonState",
+    "StageContext",
+    "StageFocus",
+    "StageType",
+    "TriggerType",
+    "VisibilityPolicyHint",
+]
