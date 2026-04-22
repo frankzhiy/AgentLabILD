@@ -25,3 +25,20 @@
 - 变更原因: 保持“一字段一语义维度”，将 StageFocus 收敛为阶段运营焦点；新增 clinical_question_tags 承载病例特异问题标签；将 VisibilityPolicyHint 收敛为纯可见性语义。
 - 验证方式: `python -m pytest -q`（13 passed）。
 
+- 任务: Phase 1-1 EvidenceAtom 最小权威证据原子模型落地
+- 变更文件:
+	- src/schemas/evidence.py
+	- src/schemas/state.py
+	- tests/test_evidence_schema.py
+	- teach/phase1_1_evidence_atom_schema_2026_04_22.md
+- 变更原因: 为分阶段 ILD-MDT 推理提供最小、可追溯、可验证的证据事实原子对象，明确证据层边界并避免诊断/行动逻辑混入。
+- 验证方式: `python -m pytest -q`（25 passed）。
+
+- 任务: Phase 1-1 EvidenceAtom 语义重构与一致性校验强化
+- 变更文件:
+	- src/schemas/evidence.py
+	- tests/test_evidence_schema.py
+	- teach/phase1_1_evidence_atom_semantic_refinement_2026_04_22.md
+- 变更原因: 将 id 防混用逻辑从“三字段不得相等”改为命名模式校验；将 category/certainty/temporality/subject 调整为更一致的临床语义分层；新增 category-modality 一致性校验，防止语义冲突对象进入状态层。
+- 验证方式: `python -m pytest -q`（32 passed）。
+

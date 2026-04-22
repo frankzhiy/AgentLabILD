@@ -1,6 +1,6 @@
 """Compatibility exports for shared state schema modules.
 
-Phase 1-1 introduces a typed StageContext in src.schemas.stage while keeping
+Phase 1-1 introduces typed StageContext / EvidenceAtom exports while keeping
 legacy import stability for shallow skeleton state references.
 """
 
@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from typing import TypedDict
 
+from .evidence import EvidenceAtom
 from .stage import (
     InfoModality,
     StageContext,
@@ -26,6 +27,7 @@ class SkeletonState(TypedDict, total=False):
 
 
 __all__ = [
+    "EvidenceAtom",
     "InfoModality",
     "SkeletonState",
     "StageContext",
