@@ -1,6 +1,7 @@
 """Compatibility exports for shared state schema modules.
 
-Phase 1-1 introduces typed StageContext / EvidenceAtom exports while keeping
+Phase 1-1 introduces typed StageContext / EvidenceAtom / ClaimReference /
+HypothesisState exports while keeping
 legacy import stability for shallow skeleton state references.
 """
 
@@ -10,6 +11,7 @@ from typing import TypedDict
 
 from .claim import ClaimReference, ClaimRelation, ClaimStrength, ClaimTargetKind
 from .evidence import EvidenceAtom
+from .hypothesis import HypothesisConfidenceLevel, HypothesisState, HypothesisStatus
 from .stage import (
     InfoModality,
     StageContext,
@@ -33,6 +35,9 @@ __all__ = [
     "ClaimStrength",
     "ClaimTargetKind",
     "EvidenceAtom",
+    "HypothesisConfidenceLevel",
+    "HypothesisState",
+    "HypothesisStatus",
     "InfoModality",
     "SkeletonState",
     "StageContext",
