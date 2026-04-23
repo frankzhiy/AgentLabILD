@@ -219,3 +219,12 @@ Do not optimize only for:
 - minimal token count
 - elegant free-text output
 - superficially complete single-pass diagnosis
+
+## 13) File length and split rules
+
+- Target file length is 300–400 lines max.
+- Hard limit is 500 lines per file.
+- If a file is likely to exceed 500 lines, split it by responsibility.
+- Never split files as part1/part2 or arbitrary fragments.
+- Split only by clear logic, e.g. model / policy / checker / pipeline / tests.
+- Prefer small, composable modules over large multi-purpose files.
