@@ -86,3 +86,20 @@
 - 变更原因: 将 hypothesis_id 收敛为对象实例 id，同时新增 hypothesis_key 承载跨阶段语义对齐；将 ACTIVE 替换为 UNDER_CONSIDERATION/PRIORITIZED，避免与疾病活动性语义串线。
 - 验证方式: `python -m pytest -q tests/test_hypothesis_state_schema.py` 与 `python -m pytest -q`。
 
+- 任务: Phase 1-1 ActionCandidate 权威候选行动对象模型落地
+- 变更文件:
+	- src/schemas/action.py
+	- src/schemas/state.py
+	- tests/test_action_candidate_schema.py
+	- teach/phase1_1_action_candidate_schema_2026_04_23.md
+- 变更原因: 新增 stage-aware 且 claim-reference-based 的候选行动对象，显式分离 supporting/refuting/missing-information/safety-concern 依据桶，阻断 direct evidence 引用，并通过 blocked 状态约束防止无阻断依据的状态写入。
+- 验证方式: `python -m pytest -q tests/test_action_candidate_schema.py` 与 `python -m pytest -q`。
+
+- 任务: Phase 1-1 ActionCandidate 语义轴对齐与概念去重
+- 变更文件:
+	- src/schemas/action.py
+	- tests/test_action_candidate_schema.py
+	- teach/phase1_1_action_candidate_schema_2026_04_23.md
+- 变更原因: 将 ActionStatus 与 HypothesisStatus 对齐到统一优先级语义轴（under_consideration/prioritized/deprioritized），保留 blocked 作为动作层特有状态；移除与 status 语义冲突的 ActionType defer_pending_information；将 start_or_adjust_treatment_trial 重命名为更中性的 start_or_adjust_treatment，避免过早引入 trial 语义负担。
+- 验证方式: `python -m pytest -q tests/test_action_candidate_schema.py` 与 `python -m pytest -q`。
+

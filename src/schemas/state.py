@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from typing import TypedDict
 
+from .action import ActionCandidate, ActionStatus, ActionType, ActionUrgency
 from .claim import ClaimReference, ClaimRelation, ClaimStrength, ClaimTargetKind
 from .evidence import EvidenceAtom
 from .hypothesis import HypothesisConfidenceLevel, HypothesisState, HypothesisStatus
@@ -30,6 +31,10 @@ class SkeletonState(TypedDict, total=False):
 
 
 __all__ = [
+    "ActionCandidate",
+    "ActionStatus",
+    "ActionType",
+    "ActionUrgency",
     "ClaimReference",
     "ClaimRelation",
     "ClaimStrength",
