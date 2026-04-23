@@ -103,3 +103,20 @@
 - 变更原因: 将 ActionStatus 与 HypothesisStatus 对齐到统一优先级语义轴（under_consideration/prioritized/deprioritized），保留 blocked 作为动作层特有状态；移除与 status 语义冲突的 ActionType defer_pending_information；将 start_or_adjust_treatment_trial 重命名为更中性的 start_or_adjust_treatment，避免过早引入 trial 语义负担。
 - 验证方式: `python -m pytest -q tests/test_action_candidate_schema.py` 与 `python -m pytest -q`。
 
+- 任务: Phase 1-1 HypothesisBoardInit 阶段作用域 board 根对象落地
+- 变更文件:
+	- src/schemas/board.py
+	- src/schemas/state.py
+	- tests/test_hypothesis_board_init.py
+	- teach/phase1_1_hypothesis_board_init_schema_2026_04_23.md
+- 变更原因: 增加轻量、stage-aware 的 board 初始化根对象，明确 board 对 evidence/hypothesis/action 的 id-only 引用边界，并通过结构化校验阻断空 hypothesis 集合、非法排序子集与自引用 parent_board 关系。
+- 验证方式: `python -m pytest -q tests/test_hypothesis_board_init.py` 与 `python -m pytest -q`。
+
+- 任务: Phase 1-1 HypothesisBoardInit 约束强化（case_id + 生命周期 + source-parent 联动）
+- 变更文件:
+	- src/schemas/board.py
+	- tests/test_hypothesis_board_init.py
+	- teach/phase1_1_hypothesis_board_init_schema_2026_04_23.md
+- 变更原因: 补齐 board root 的 id 约束对称性（新增 case_id pattern），将 BoardStatus 扩展为最小生命周期集合，并新增 init_source 与 parent_board_id 的跨字段一致性校验，避免阶段演化语义漂移。
+- 验证方式: `python -m pytest -q tests/test_hypothesis_board_init.py` 与 `python -m pytest -q`。
+

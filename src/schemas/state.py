@@ -10,6 +10,7 @@ from __future__ import annotations
 from typing import TypedDict
 
 from .action import ActionCandidate, ActionStatus, ActionType, ActionUrgency
+from .board import BoardInitSource, BoardStatus, HypothesisBoardInit
 from .claim import ClaimReference, ClaimRelation, ClaimStrength, ClaimTargetKind
 from .evidence import EvidenceAtom
 from .hypothesis import HypothesisConfidenceLevel, HypothesisState, HypothesisStatus
@@ -35,11 +36,14 @@ __all__ = [
     "ActionStatus",
     "ActionType",
     "ActionUrgency",
+    "BoardInitSource",
+    "BoardStatus",
     "ClaimReference",
     "ClaimRelation",
     "ClaimStrength",
     "ClaimTargetKind",
     "EvidenceAtom",
+    "HypothesisBoardInit",
     "HypothesisConfidenceLevel",
     "HypothesisState",
     "HypothesisStatus",
