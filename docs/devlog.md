@@ -206,3 +206,14 @@
 - 变更原因: 修复 EvidenceAtom flat source 字段与 EvidenceProvenance 并存造成的双权威风险，明确 authority rule（provenance 缺失时保留 legacy flat 模式；provenance 存在时以 provenance 为权威，flat 字段仅兼容镜像），并在 checker 中新增显式对齐检查（不自动修复、不变异状态）。
 - 验证方式: `python -m pytest -q tests/test_provenance_checker.py tests/test_provenance_validator.py`（21 passed）；`python -m pytest -q`（179 passed）。
 
+- 任务: Phase 1-2 provenance checker 四文件结构拆分（行为保持）
+- 变更文件:
+	- src/provenance/issues.py
+	- src/provenance/evidence_checks.py
+	- src/provenance/claim_checks.py
+	- src/provenance/checker.py
+	- docs/devlog.md
+	- teach/phase1_2_provenance_checker_structural_split_2026_04_23.md
+- 变更原因: 将 monolithic provenance checker 进行职责拆分（issue 定义、evidence 检查、claim 检查、编排器），在不改变 issue_code、blocking 语义、兼容模式和公共 validator 行为的前提下提升模块边界清晰度。
+- 验证方式: `python -m pytest -q tests/test_provenance_checker.py tests/test_provenance_validator.py`（21 passed）；`python -m pytest -q`（179 passed）。
+
