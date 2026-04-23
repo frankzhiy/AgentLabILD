@@ -61,11 +61,14 @@ def build_valid_envelope() -> Phase1StateEnvelope:
                 "category": EvidenceCategory.IMAGING_FINDING,
                 "modality": InfoModality.HRCT_TEXT,
                 "statement": "Subpleural reticulation is present.",
-                "raw_excerpt": "HRCT: Subpleural reticulation is present.",
+                "raw_excerpt": "Subpleural reticulation",
                 "polarity": EvidencePolarity.PRESENT,
                 "certainty": EvidenceCertainty.CONFIRMED,
                 "temporality": EvidenceTemporality.CURRENT,
                 "subject": EvidenceSubject.PATIENT,
+                "source_span_start": 0,
+                "source_span_end": 22,
+                "extraction_method": "llm_structured",
                 "provenance": {
                     "evidence_provenance_id": "eprov-001",
                     "stage_id": "stage-001",
@@ -190,6 +193,131 @@ def test_checker_returns_no_issue_for_fully_aligned_provenance() -> None:
     assert issues == ()
 
 
+def test_checker_reports_single_anchor_flat_source_doc_mismatch_as_blocking() -> None:
+    envelope = build_valid_envelope()
+    envelope.evidence_atoms[0].source_doc_id = "doc-999"
+
+    issues = check_phase1_provenance(envelope, require_provenance=True)
+    flat_doc_issues = [
+        issue
+        for issue in issues
+        if issue.issue_code == "provenance.evidence_flat_source_doc_mismatch"
+    ]
+
+    assert len(flat_doc_issues) == 1
+    assert flat_doc_issues[0].blocking is True
+
+
+def test_checker_reports_single_anchor_flat_excerpt_mismatch_as_blocking() -> None:
+    envelope = build_valid_envelope()
+    envelope.evidence_atoms[0].raw_excerpt = "Reticular pattern with uncertain anchor mapping"
+
+    issues = check_phase1_provenance(envelope, require_provenance=True)
+    flat_excerpt_issues = [
+        issue
+        for issue in issues
+        if issue.issue_code == "provenance.evidence_flat_excerpt_mismatch"
+    ]
+
+    assert len(flat_excerpt_issues) == 1
+    assert flat_excerpt_issues[0].blocking is True
+
+
+def test_checker_reports_single_anchor_flat_span_mismatch_as_blocking() -> None:
+    envelope = build_valid_envelope()
+    envelope.evidence_atoms[0].source_span_start = 10
+    envelope.evidence_atoms[0].source_span_end = 18
+
+    issues = check_phase1_provenance(envelope, require_provenance=True)
+    flat_span_issues = [
+        issue
+        for issue in issues
+        if issue.issue_code == "provenance.evidence_flat_span_mismatch"
+    ]
+
+    assert len(flat_span_issues) == 1
+    assert flat_span_issues[0].blocking is True
+
+
+def test_checker_reports_flat_extraction_method_mismatch_as_blocking() -> None:
+    envelope = build_valid_envelope()
+    envelope.evidence_atoms[0].extraction_method = "manual-curation"
+
+    issues = check_phase1_provenance(envelope, require_provenance=True)
+    extraction_method_issues = [
+        issue
+        for issue in issues
+        if issue.issue_code == "provenance.evidence_flat_extraction_method_mismatch"
+    ]
+
+    assert len(extraction_method_issues) == 1
+    assert extraction_method_issues[0].blocking is True
+
+
+def test_checker_reports_multi_anchor_source_doc_membership_mismatch_as_blocking() -> None:
+    envelope = build_valid_envelope()
+    provenance = envelope.evidence_atoms[0].provenance
+    assert provenance is not None
+
+    second_anchor = SourceAnchor(
+        anchor_id="anchor-002",
+        stage_id="stage-001",
+        source_doc_id="doc-002",
+        modality=InfoModality.HRCT_TEXT,
+        raw_excerpt="Traction bronchiectasis",
+        section_label=None,
+        span_start=30,
+        span_end=52,
+    )
+    provenance.source_anchors = (provenance.source_anchors[0], second_anchor)
+    provenance.extraction_activity.input_source_doc_ids = ("doc-001", "doc-002")
+    envelope.stage_context.source_doc_ids = ("doc-001", "doc-002")
+    envelope.evidence_atoms[0].source_doc_id = "doc-999"
+
+    issues = check_phase1_provenance(envelope, require_provenance=True)
+    flat_doc_issues = [
+        issue
+        for issue in issues
+        if issue.issue_code == "provenance.evidence_flat_source_doc_mismatch"
+    ]
+
+    assert len(flat_doc_issues) == 1
+    assert flat_doc_issues[0].blocking is True
+
+
+def test_checker_reports_multi_anchor_flat_excerpt_span_ambiguity_without_autofix() -> None:
+    envelope = build_valid_envelope()
+    provenance = envelope.evidence_atoms[0].provenance
+    assert provenance is not None
+
+    second_anchor = SourceAnchor(
+        anchor_id="anchor-002",
+        stage_id="stage-001",
+        source_doc_id="doc-001",
+        modality=InfoModality.HRCT_TEXT,
+        raw_excerpt="Reticular opacity cluster",
+        section_label=None,
+        span_start=40,
+        span_end=62,
+    )
+    provenance.source_anchors = (provenance.source_anchors[0], second_anchor)
+    provenance.extraction_activity.input_source_doc_ids = ("doc-001",)
+
+    envelope.evidence_atoms[0].raw_excerpt = "Merged text from two nearby regions"
+    envelope.evidence_atoms[0].source_span_start = 0
+    envelope.evidence_atoms[0].source_span_end = 62
+
+    issues = check_phase1_provenance(envelope, require_provenance=True)
+    ambiguous_issues = [
+        issue
+        for issue in issues
+        if issue.issue_code == "provenance.evidence_flat_multi_anchor_ambiguous"
+    ]
+
+    assert len(ambiguous_issues) == 1
+    assert ambiguous_issues[0].blocking is False
+
+
 def test_checker_reports_missing_provenance_as_warning_by_default() -> None:
     envelope = build_valid_envelope()
     envelope.evidence_atoms[0].provenance = None
@@ -202,6 +330,27 @@ def test_checker_reports_missing_provenance_as_warning_by_default() -> None:
     ]
     assert len(missing_issues) == 2
     assert all(issue.blocking is False for issue in missing_issues)
+
+
+def test_checker_keeps_backward_compatible_behavior_when_provenance_absent() -> None:
+    envelope = build_valid_envelope()
+    envelope.evidence_atoms[0].provenance = None
+    envelope.claim_references[0].provenance.evidence_provenance_ids = ()
+    envelope.claim_references[1].provenance.evidence_provenance_ids = ()
+
+    issues = check_phase1_provenance(envelope)
+
+    missing_provenance_issues = [
+        issue
+        for issue in issues
+        if issue.issue_code == "provenance.missing_provenance"
+        and issue.target_id == envelope.evidence_atoms[0].evidence_id
+    ]
+    assert len(missing_provenance_issues) == 1
+    assert missing_provenance_issues[0].blocking is False
+    assert not any(
+        issue.issue_code.startswith("provenance.evidence_flat_") for issue in issues
+    )
 
 
 def test_checker_reports_missing_provenance_as_blocking_when_required() -> None:

@@ -94,3 +94,18 @@ def test_validate_phase1_provenance_blocks_orphan_provenance_reference() -> None
         issue.issue_code == "provenance.orphan_evidence_provenance_reference"
         for issue in report.issues
     )
+
+
+def test_validate_phase1_provenance_blocks_flat_source_doc_mismatch() -> None:
+    envelope = build_valid_envelope()
+    envelope.evidence_atoms[0].source_doc_id = "doc-999"
+
+    report = validate_phase1_provenance(envelope, require_provenance=True)
+
+    assert report.is_valid is False
+    assert report.has_blocking_issue is True
+    assert any(
+        issue.issue_code == "provenance.evidence_flat_source_doc_mismatch"
+        and issue.blocking
+        for issue in report.issues
+    )

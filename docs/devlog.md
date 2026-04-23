@@ -195,3 +195,14 @@
 - 变更原因: 新增外部机制化 provenance 检查链路，覆盖 source span 完整性与顺序、stage/case 对齐、source_doc 可见性、claim provenance 与 ClaimReference.evidence_ids 一致性、orphan/missing provenance，并输出可直接转换为 StateValidationReport 的结构化 issue；保持 schema 与 pipeline 语义不变。
 - 验证方式: `python -m pytest -q tests/test_provenance_checker.py tests/test_provenance_validator.py`（13 passed）；`python -m pytest -q`（全量回归通过）。
 
+- 任务: Phase 1-2 EvidenceAtom flat source 与 EvidenceProvenance 权威源收敛
+- 变更文件:
+	- src/schemas/evidence.py
+	- src/provenance/checker.py
+	- tests/test_provenance_checker.py
+	- tests/test_provenance_validator.py
+	- docs/devlog.md
+	- teach/phase1_2_evidence_provenance_authority_rule_2026_04_23.md
+- 变更原因: 修复 EvidenceAtom flat source 字段与 EvidenceProvenance 并存造成的双权威风险，明确 authority rule（provenance 缺失时保留 legacy flat 模式；provenance 存在时以 provenance 为权威，flat 字段仅兼容镜像），并在 checker 中新增显式对齐检查（不自动修复、不变异状态）。
+- 验证方式: `python -m pytest -q tests/test_provenance_checker.py tests/test_provenance_validator.py`（21 passed）；`python -m pytest -q`（179 passed）。
+

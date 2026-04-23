@@ -9,6 +9,10 @@
 1. 本文件只描述“证据事实原子”，不承载诊断、仲裁或行动规划逻辑。
 2. 证据对象必须显式关联 stage_id 与 source_doc_id，保证可追溯性。
 3. non_authoritative_note 仅供说明，不可作为权威推理依据。
+4. 权威来源规则：
+    - provenance 为 None 时，flat source 字段按历史兼容模式继续使用。
+    - provenance 非 None 时，provenance 为权威来源，flat source 字段仅作兼容镜像。
+    - flat/provenance 的细粒度对齐由 provenance checker 统一负责。
 
 校验说明：
 1. 权威字段必须为非空值。
@@ -144,7 +148,17 @@ ALLOWED_MODALITIES_BY_CATEGORY: dict[EvidenceCategory, set[InfoModality]] = {
 }
 
 class EvidenceAtom(BaseModel):
-    """Authoritative minimal evidence unit for Phase 1-1."""
+    """Authoritative minimal evidence unit for Phase 1-1.
+
+    Authority rule:
+    1. provenance is None: flat source fields keep backward-compatible legacy behavior.
+    2. provenance is not None: provenance becomes authoritative source-of-truth.
+    3. flat source fields remain for compatibility and should align with provenance.
+
+    Note:
+    - Schema layer keeps only lightweight identity/stage alignment checks.
+    - Detailed mirror-alignment checks belong to provenance checker.
+    """
 
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
 
@@ -167,10 +181,12 @@ class EvidenceAtom(BaseModel):
     value_text: str | None = None
     unit: str | None = None
     body_site: str | None = None
+    # Legacy-compatible flat source mirrors.
     source_span_start: int | None = Field(default=None, ge=0)
     source_span_end: int | None = Field(default=None, ge=0)
     extraction_method: str | None = None
     non_authoritative_note: str | None = None
+    # Structured authoritative provenance when present.
     provenance: EvidenceProvenance | None = None
 
     @field_validator("evidence_id")

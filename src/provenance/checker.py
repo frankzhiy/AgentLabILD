@@ -86,6 +86,23 @@ def _missing_provenance_issue(
     )
 
 
+def _normalize_extraction_method(value: object) -> str | None:
+    """Normalize extraction method text for robust string/enum alignment checks."""
+
+    if value is None:
+        return None
+
+    normalized = str(value).strip().lower()
+    if not normalized:
+        return None
+
+    tokens = normalized.replace("-", " ").replace("_", " ").split()
+    if not tokens:
+        return None
+
+    return "_".join(tokens)
+
+
 def check_phase1_provenance(
     envelope: Phase1StateEnvelope,
     *,
@@ -216,6 +233,177 @@ def check_phase1_provenance(
                     related_ids=(provenance.extraction_activity.stage_id, stage_id),
                     blocking=True,
                     suggested_fix="align extraction_activity.stage_id with stage_context.stage_id",
+                )
+            )
+
+        source_anchors = provenance.source_anchors
+        if len(source_anchors) == 1:
+            anchor = source_anchors[0]
+
+            if atom.source_doc_id != anchor.source_doc_id:
+                issues.append(
+                    _make_issue(
+                        issue_code="provenance.evidence_flat_source_doc_mismatch",
+                        severity=ValidationSeverity.ERROR,
+                        message=(
+                            "flat source_doc_id must align with provenance source anchor "
+                            "when exactly one source anchor is present"
+                        ),
+                        target_kind=ValidationTargetKind.EVIDENCE_ATOM,
+                        target_id=atom.evidence_id,
+                        field_path="source_doc_id",
+                        related_ids=(atom.source_doc_id, anchor.source_doc_id),
+                        blocking=True,
+                        suggested_fix=(
+                            "set evidence source_doc_id equal to "
+                            "provenance.source_anchors[0].source_doc_id"
+                        ),
+                    )
+                )
+
+            if atom.raw_excerpt != anchor.raw_excerpt:
+                issues.append(
+                    _make_issue(
+                        issue_code="provenance.evidence_flat_excerpt_mismatch",
+                        severity=ValidationSeverity.ERROR,
+                        message=(
+                            "flat raw_excerpt must align with provenance source anchor "
+                            "when exactly one source anchor is present"
+                        ),
+                        target_kind=ValidationTargetKind.EVIDENCE_ATOM,
+                        target_id=atom.evidence_id,
+                        field_path="raw_excerpt",
+                        related_ids=(anchor.anchor_id,),
+                        blocking=True,
+                        suggested_fix=(
+                            "set evidence raw_excerpt equal to "
+                            "provenance.source_anchors[0].raw_excerpt"
+                        ),
+                    )
+                )
+
+            if (
+                atom.source_span_start != anchor.span_start
+                or atom.source_span_end != anchor.span_end
+            ):
+                issues.append(
+                    _make_issue(
+                        issue_code="provenance.evidence_flat_span_mismatch",
+                        severity=ValidationSeverity.ERROR,
+                        message=(
+                            "flat source span must align with provenance source anchor "
+                            "when exactly one source anchor is present"
+                        ),
+                        target_kind=ValidationTargetKind.EVIDENCE_ATOM,
+                        target_id=atom.evidence_id,
+                        field_path="source_span_start",
+                        related_ids=(anchor.anchor_id,),
+                        blocking=True,
+                        suggested_fix=(
+                            "set source_span_start/source_span_end equal to "
+                            "provenance.source_anchors[0].span_start/span_end"
+                        ),
+                    )
+                )
+        else:
+            anchor_source_doc_ids = {anchor.source_doc_id for anchor in source_anchors}
+            if atom.source_doc_id not in anchor_source_doc_ids:
+                issues.append(
+                    _make_issue(
+                        issue_code="provenance.evidence_flat_source_doc_mismatch",
+                        severity=ValidationSeverity.ERROR,
+                        message=(
+                            "flat source_doc_id must belong to provenance source anchor "
+                            "source_doc_id set in multi-anchor mode"
+                        ),
+                        target_kind=ValidationTargetKind.EVIDENCE_ATOM,
+                        target_id=atom.evidence_id,
+                        field_path="source_doc_id",
+                        related_ids=(atom.source_doc_id, *tuple(sorted(anchor_source_doc_ids))),
+                        blocking=True,
+                        suggested_fix=(
+                            "set evidence source_doc_id to one of provenance source anchor "
+                            "source_doc_id values"
+                        ),
+                    )
+                )
+            else:
+                candidate_anchors = [
+                    anchor
+                    for anchor in source_anchors
+                    if anchor.source_doc_id == atom.source_doc_id
+                ]
+                matched_anchors = [
+                    anchor
+                    for anchor in candidate_anchors
+                    if anchor.raw_excerpt == atom.raw_excerpt
+                ]
+
+                if atom.source_span_start is not None and atom.source_span_end is not None:
+                    matched_anchors = [
+                        anchor
+                        for anchor in matched_anchors
+                        if (
+                            anchor.span_start == atom.source_span_start
+                            and anchor.span_end == atom.source_span_end
+                        )
+                    ]
+                elif (atom.source_span_start is None) ^ (atom.source_span_end is None):
+                    matched_anchors = []
+
+                if len(matched_anchors) != 1:
+                    issues.append(
+                        _make_issue(
+                            issue_code="provenance.evidence_flat_multi_anchor_ambiguous",
+                            severity=ValidationSeverity.WARNING,
+                            message=(
+                                "flat raw_excerpt/source_span cannot be safely mapped to "
+                                "a unique provenance source anchor in multi-anchor mode"
+                            ),
+                            target_kind=ValidationTargetKind.EVIDENCE_ATOM,
+                            target_id=atom.evidence_id,
+                            field_path="raw_excerpt",
+                            related_ids=tuple(
+                                sorted(anchor.anchor_id for anchor in candidate_anchors)
+                            ),
+                            blocking=False,
+                            suggested_fix=(
+                                "keep provenance as authority and make flat raw_excerpt/source_span "
+                                "match one unique anchor for compatibility"
+                            ),
+                        )
+                    )
+
+        normalized_flat_extraction_method = _normalize_extraction_method(
+            atom.extraction_method
+        )
+        normalized_activity_extraction_method = _normalize_extraction_method(
+            provenance.extraction_activity.extraction_method
+        )
+        if (
+            normalized_flat_extraction_method is not None
+            and normalized_flat_extraction_method != normalized_activity_extraction_method
+        ):
+            issues.append(
+                _make_issue(
+                    issue_code="provenance.evidence_flat_extraction_method_mismatch",
+                    severity=ValidationSeverity.ERROR,
+                    message=(
+                        "flat extraction_method must align with provenance "
+                        "extraction_activity.extraction_method when provided"
+                    ),
+                    target_kind=ValidationTargetKind.EVIDENCE_ATOM,
+                    target_id=atom.evidence_id,
+                    field_path="extraction_method",
+                    related_ids=(
+                        atom.extraction_method,
+                        provenance.extraction_activity.extraction_method.value,
+                    ),
+                    blocking=True,
+                    suggested_fix=(
+                        "set flat extraction_method to the same method as "
+                        "provenance.extraction_activity.extraction_method"
+                    ),
                 )
             )
 
