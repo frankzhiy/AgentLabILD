@@ -28,17 +28,16 @@ from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
-
-NonEmptyStr = Annotated[str, Field(min_length=1)]
-ActionText = Annotated[str, Field(min_length=1, max_length=220)]
-
-
-ACTION_CANDIDATE_ID_PATTERN = re.compile(
-    r"^action(?:_candidate)?[_-][A-Za-z0-9][A-Za-z0-9_-]*$"
+from .common import (
+    ACTION_CANDIDATE_ID_PATTERN,
+    CLAIM_REF_ID_PATTERN,
+    HYPOTHESIS_ID_PATTERN,
+    STAGE_ID_PATTERN,
+    NonEmptyStr,
+    validate_id_pattern,
 )
-STAGE_ID_PATTERN = re.compile(r"^stage[_-][A-Za-z0-9][A-Za-z0-9_-]*$")
-HYPOTHESIS_ID_PATTERN = re.compile(r"^hyp(?:othesis)?[_-][A-Za-z0-9][A-Za-z0-9_-]*$")
-CLAIM_REF_ID_PATTERN = re.compile(r"^claim_ref[_-][A-Za-z0-9][A-Za-z0-9_-]*$")
+
+ActionText = Annotated[str, Field(min_length=1, max_length=220)]
 
 
 class ActionType(StrEnum):
@@ -104,18 +103,22 @@ class ActionCandidate(BaseModel):
     @field_validator("action_candidate_id")
     @classmethod
     def validate_action_candidate_id_pattern(cls, value: str) -> str:
-        if not ACTION_CANDIDATE_ID_PATTERN.fullmatch(value):
-            raise ValueError(
-                "action_candidate_id must match pattern like action_001 or action_candidate-001"
-            )
-        return value
+        return validate_id_pattern(
+            value,
+            pattern=ACTION_CANDIDATE_ID_PATTERN,
+            field_name="action_candidate_id",
+            example="action_001 or action_candidate-001",
+        )
 
     @field_validator("stage_id")
     @classmethod
     def validate_stage_id_pattern(cls, value: str) -> str:
-        if not STAGE_ID_PATTERN.fullmatch(value):
-            raise ValueError("stage_id must match pattern like stage_001 or stage-001")
-        return value
+        return validate_id_pattern(
+            value,
+            pattern=STAGE_ID_PATTERN,
+            field_name="stage_id",
+            example="stage_001 or stage-001",
+        )
 
     @field_validator("linked_hypothesis_ids")
     @classmethod

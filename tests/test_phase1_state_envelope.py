@@ -89,6 +89,15 @@ def _base_payload() -> dict[str, object]:
                 "claim_text": "Imaging pattern supports fibrotic ILD hypothesis.",
                 "relation": ClaimRelation.SUPPORTS,
                 "evidence_ids": ["evd-001"],
+            },
+            {
+                "claim_ref_id": "claim_ref-002",
+                "stage_id": "stage-001",
+                "target_kind": ClaimTargetKind.ACTION,
+                "target_id": "action-001",
+                "claim_text": "Action is supported by current imaging evidence.",
+                "relation": ClaimRelation.SUPPORTS,
+                "evidence_ids": ["evd-001"],
             }
         ],
         "hypotheses": [
@@ -112,7 +121,7 @@ def _base_payload() -> dict[str, object]:
                 "status": ActionStatus.PRIORITIZED,
                 "urgency": ActionUrgency.EXPEDITED,
                 "linked_hypothesis_ids": ["hyp-001"],
-                "supporting_claim_ref_ids": ["claim_ref-001"],
+                "supporting_claim_ref_ids": ["claim_ref-002"],
                 "refuting_claim_ref_ids": [],
                 "missing_information_claim_ref_ids": [],
                 "safety_concern_claim_ref_ids": [],
@@ -131,6 +140,7 @@ def _base_payload() -> dict[str, object]:
             "validator_version": "1.0.0",
             "summary": "No blocking issue found.",
         },
+        "state_id": "state-001",
         "state_version": 1,
         "parent_state_id": None,
         "created_at": created_at,
@@ -282,6 +292,7 @@ def test_phase1_state_envelope_valid_construction() -> None:
     assert envelope.stage_context.stage_id == "stage-001"
     assert envelope.validation_report is not None
     assert envelope.validation_report.is_valid is True
+    assert envelope.state_id == "state-001"
     assert envelope.state_version == 1
 
 
@@ -326,6 +337,16 @@ def test_phase1_state_envelope_rejects_missing_claim_references() -> None:
     assert "missing claim references" in str(exc.value)
 
 
+def test_phase1_state_envelope_rejects_borrowed_claim_reference() -> None:
+    payload = _base_payload()
+    payload["action_candidates"][0]["supporting_claim_ref_ids"] = ["claim_ref-001"]
+
+    with pytest.raises(ValidationError) as exc:
+        Phase1StateEnvelope(**payload)
+
+    assert "claim_ref target mismatch for action_candidates" in str(exc.value)
+
+
 def test_phase1_state_envelope_rejects_missing_evidence_references() -> None:
     payload = _base_payload()
     payload["claim_references"][0]["evidence_ids"] = ["evd-999"]
@@ -345,6 +366,74 @@ def test_phase1_state_envelope_rejects_ranked_hypothesis_not_in_hypotheses() -> 
         Phase1StateEnvelope(**payload)
 
     assert "ranked hypothesis ids not found in hypotheses" in str(exc.value)
+
+
+def test_phase1_state_envelope_rejects_board_evidence_id_mismatch() -> None:
+    payload = _base_payload()
+    payload["board_init"]["evidence_ids"] = ["evd-999"]
+
+    with pytest.raises(ValidationError) as exc:
+        Phase1StateEnvelope(**payload)
+
+    assert "board_init.evidence_ids must exactly match envelope ids" in str(exc.value)
+
+
+def test_phase1_state_envelope_rejects_board_hypothesis_id_mismatch() -> None:
+    payload = _base_payload()
+    payload["board_init"]["hypothesis_ids"] = ["hyp-999"]
+    payload["board_init"]["ranked_hypothesis_ids"] = ["hyp-999"]
+
+    with pytest.raises(ValidationError) as exc:
+        Phase1StateEnvelope(**payload)
+
+    assert "board_init.hypothesis_ids must exactly match envelope ids" in str(exc.value)
+
+
+def test_phase1_state_envelope_rejects_board_action_id_mismatch() -> None:
+    payload = _base_payload()
+    payload["board_init"]["action_candidate_ids"] = ["action-999"]
+
+    with pytest.raises(ValidationError) as exc:
+        Phase1StateEnvelope(**payload)
+
+    assert "board_init.action_candidate_ids must exactly match envelope ids" in str(exc.value)
+
+
+def test_phase1_state_envelope_rejects_missing_linked_hypothesis_id() -> None:
+    payload = _base_payload()
+    payload["action_candidates"][0]["linked_hypothesis_ids"] = ["hyp-999"]
+
+    with pytest.raises(ValidationError) as exc:
+        Phase1StateEnvelope(**payload)
+
+    assert "action linked_hypothesis_ids not found in hypotheses" in str(exc.value)
+
+
+def test_phase1_state_envelope_allows_distinct_parent_state_id() -> None:
+    payload = _base_payload()
+    payload["parent_state_id"] = "state-000"
+
+    envelope = Phase1StateEnvelope(**payload)
+
+    assert envelope.parent_state_id == "state-000"
+
+
+def test_phase1_state_envelope_rejects_parent_state_id_equal_to_state_id() -> None:
+    payload = _base_payload()
+    payload["parent_state_id"] = "state-001"
+
+    with pytest.raises(ValidationError) as exc:
+        Phase1StateEnvelope(**payload)
+
+    assert "parent_state_id must not equal state_id" in str(exc.value)
+
+
+def test_phase1_state_envelope_rejects_invalid_state_id_pattern() -> None:
+    payload = _base_payload()
+    payload["state_id"] = "board-001"
+
+    with pytest.raises(ValidationError):
+        Phase1StateEnvelope(**payload)
 
 
 def test_state_module_exports_validation_types() -> None:

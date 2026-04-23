@@ -15,18 +15,18 @@ from enum import StrEnum
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from .common import (
+    BOARD_ID_PATTERN,
+    CASE_ID_PATTERN,
+    ISSUE_ID_PATTERN,
     NonEmptyStr,
+    REPORT_ID_PATTERN,
+    STAGE_ID_PATTERN,
     find_duplicate_items,
     normalize_optional_note,
     normalize_optional_text,
+    validate_id_pattern,
 )
 
-
-REPORT_ID_PATTERN = re.compile(r"^report[_-][A-Za-z0-9][A-Za-z0-9_-]*$")
-ISSUE_ID_PATTERN = re.compile(r"^issue[_-][A-Za-z0-9][A-Za-z0-9_-]*$")
-CASE_ID_PATTERN = re.compile(r"^case[_-][A-Za-z0-9][A-Za-z0-9_-]*$")
-STAGE_ID_PATTERN = re.compile(r"^stage[_-][A-Za-z0-9][A-Za-z0-9_-]*$")
-BOARD_ID_PATTERN = re.compile(r"^board[_-][A-Za-z0-9][A-Za-z0-9_-]*$")
 ISSUE_CODE_PATTERN = re.compile(r"^[a-z][a-z0-9_.-]*$")
 
 
@@ -72,9 +72,12 @@ class ValidationIssue(BaseModel):
     @field_validator("issue_id")
     @classmethod
     def validate_issue_id_pattern(cls, value: str) -> str:
-        if not ISSUE_ID_PATTERN.fullmatch(value):
-            raise ValueError("issue_id must match pattern like issue_001 or issue-001")
-        return value
+        return validate_id_pattern(
+            value,
+            pattern=ISSUE_ID_PATTERN,
+            field_name="issue_id",
+            example="issue_001 or issue-001",
+        )
 
     @field_validator("issue_code")
     @classmethod
@@ -124,23 +127,32 @@ class StateValidationReport(BaseModel):
     @field_validator("report_id")
     @classmethod
     def validate_report_id_pattern(cls, value: str) -> str:
-        if not REPORT_ID_PATTERN.fullmatch(value):
-            raise ValueError("report_id must match pattern like report_001 or report-001")
-        return value
+        return validate_id_pattern(
+            value,
+            pattern=REPORT_ID_PATTERN,
+            field_name="report_id",
+            example="report_001 or report-001",
+        )
 
     @field_validator("case_id")
     @classmethod
     def validate_case_id_pattern(cls, value: str) -> str:
-        if not CASE_ID_PATTERN.fullmatch(value):
-            raise ValueError("case_id must match pattern like case_001 or case-001")
-        return value
+        return validate_id_pattern(
+            value,
+            pattern=CASE_ID_PATTERN,
+            field_name="case_id",
+            example="case_001 or case-001",
+        )
 
     @field_validator("stage_id")
     @classmethod
     def validate_stage_id_pattern(cls, value: str) -> str:
-        if not STAGE_ID_PATTERN.fullmatch(value):
-            raise ValueError("stage_id must match pattern like stage_001 or stage-001")
-        return value
+        return validate_id_pattern(
+            value,
+            pattern=STAGE_ID_PATTERN,
+            field_name="stage_id",
+            example="stage_001 or stage-001",
+        )
 
     @field_validator("board_id", mode="before")
     @classmethod
@@ -152,9 +164,12 @@ class StateValidationReport(BaseModel):
     def validate_board_id_pattern(cls, value: str | None) -> str | None:
         if value is None:
             return None
-        if not BOARD_ID_PATTERN.fullmatch(value):
-            raise ValueError("board_id must match pattern like board_001 or board-001")
-        return value
+        return validate_id_pattern(
+            value,
+            pattern=BOARD_ID_PATTERN,
+            field_name="board_id",
+            example="board_001 or board-001",
+        )
 
     @field_validator("summary", mode="before")
     @classmethod

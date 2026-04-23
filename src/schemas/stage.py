@@ -50,8 +50,12 @@ from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
-
-NonEmptyStr = Annotated[str, Field(min_length=1)]
+from .common import (
+    CASE_ID_PATTERN,
+    STAGE_ID_PATTERN,
+    NonEmptyStr,
+    validate_id_pattern,
+)
 
 
 class StageType(StrEnum):
@@ -141,6 +145,26 @@ class StageContext(BaseModel):
     clinical_question_tags: tuple[NonEmptyStr, ...] = Field(default_factory=tuple)
     visibility_policy_hint: VisibilityPolicyHint | None = None
     non_authoritative_note: str | None = None
+
+    @field_validator("stage_id")
+    @classmethod
+    def validate_stage_id_pattern(cls, value: str) -> str:
+        return validate_id_pattern(
+            value,
+            pattern=STAGE_ID_PATTERN,
+            field_name="stage_id",
+            example="stage_001 or stage-001",
+        )
+
+    @field_validator("case_id")
+    @classmethod
+    def validate_case_id_pattern(cls, value: str) -> str:
+        return validate_id_pattern(
+            value,
+            pattern=CASE_ID_PATTERN,
+            field_name="case_id",
+            example="case_001 or case-001",
+        )
 
     @field_validator("parent_stage_id")
     @classmethod

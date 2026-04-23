@@ -30,19 +30,16 @@ from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
-
-NonEmptyStr = Annotated[str, Field(min_length=1)]
-
-
-BOARD_ID_PATTERN = re.compile(r"^board[_-][A-Za-z0-9][A-Za-z0-9_-]*$")
-CASE_ID_PATTERN = re.compile(r"^case[_-][A-Za-z0-9][A-Za-z0-9_-]*$")
-STAGE_ID_PATTERN = re.compile(r"^stage[_-][A-Za-z0-9][A-Za-z0-9_-]*$")
-EVIDENCE_ID_PATTERN = re.compile(r"^(ev|evd)[_-][A-Za-z0-9][A-Za-z0-9_-]*$")
-HYPOTHESIS_ID_PATTERN = re.compile(r"^hyp(?:othesis)?[_-][A-Za-z0-9][A-Za-z0-9_-]*$")
-ACTION_CANDIDATE_ID_PATTERN = re.compile(
-    r"^action(?:_candidate)?[_-][A-Za-z0-9][A-Za-z0-9_-]*$"
+from .common import (
+    ACTION_CANDIDATE_ID_PATTERN,
+    BOARD_ID_PATTERN,
+    CASE_ID_PATTERN,
+    EVIDENCE_ID_PATTERN,
+    HYPOTHESIS_ID_PATTERN,
+    STAGE_ID_PATTERN,
+    NonEmptyStr,
+    validate_id_pattern,
 )
-
 
 class BoardStatus(StrEnum):
     """Board root status taxonomy for initialization phase."""
@@ -83,23 +80,32 @@ class HypothesisBoardInit(BaseModel):
     @field_validator("board_id")
     @classmethod
     def validate_board_id_pattern(cls, value: str) -> str:
-        if not BOARD_ID_PATTERN.fullmatch(value):
-            raise ValueError("board_id must match pattern like board_001 or board-001")
-        return value
+        return validate_id_pattern(
+            value,
+            pattern=BOARD_ID_PATTERN,
+            field_name="board_id",
+            example="board_001 or board-001",
+        )
 
     @field_validator("case_id")
     @classmethod
     def validate_case_id_pattern(cls, value: str) -> str:
-        if not CASE_ID_PATTERN.fullmatch(value):
-            raise ValueError("case_id must match pattern like case_001 or case-001")
-        return value
+        return validate_id_pattern(
+            value,
+            pattern=CASE_ID_PATTERN,
+            field_name="case_id",
+            example="case_001 or case-001",
+        )
 
     @field_validator("stage_id")
     @classmethod
     def validate_stage_id_pattern(cls, value: str) -> str:
-        if not STAGE_ID_PATTERN.fullmatch(value):
-            raise ValueError("stage_id must match pattern like stage_001 or stage-001")
-        return value
+        return validate_id_pattern(
+            value,
+            pattern=STAGE_ID_PATTERN,
+            field_name="stage_id",
+            example="stage_001 or stage-001",
+        )
 
     @field_validator("parent_board_id", mode="before")
     @classmethod
@@ -114,11 +120,12 @@ class HypothesisBoardInit(BaseModel):
     def validate_parent_board_id_pattern(cls, value: str | None) -> str | None:
         if value is None:
             return None
-        if not BOARD_ID_PATTERN.fullmatch(value):
-            raise ValueError(
-                "parent_board_id must match pattern like board_001 or board-001"
-            )
-        return value
+        return validate_id_pattern(
+            value,
+            pattern=BOARD_ID_PATTERN,
+            field_name="parent_board_id",
+            example="board_001 or board-001",
+        )
 
     @field_validator("evidence_ids")
     @classmethod

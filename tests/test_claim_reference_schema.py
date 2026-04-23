@@ -108,11 +108,21 @@ def test_invalid_id_patterns_rejected() -> None:
 
 def test_target_id_pattern_must_match_target_kind() -> None:
     payload = _base_payload()
-    payload["target_kind"] = ClaimTargetKind.ACTION_CANDIDATE
+    payload["target_kind"] = ClaimTargetKind.ACTION
     payload["target_id"] = "hyp-001"
 
     with pytest.raises(ValidationError):
         ClaimReference(**payload)
+
+
+def test_legacy_action_candidate_target_kind_is_normalized() -> None:
+    payload = _base_payload()
+    payload["target_kind"] = "action_candidate"
+    payload["target_id"] = "action-001"
+
+    claim_ref = ClaimReference(**payload)
+
+    assert claim_ref.target_kind is ClaimTargetKind.ACTION
 
 
 def test_state_module_exports_claim_reference() -> None:

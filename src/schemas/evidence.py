@@ -26,14 +26,14 @@ from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
+from .common import (
+    EVIDENCE_ID_PATTERN,
+    SOURCE_DOC_ID_PATTERN,
+    STAGE_ID_PATTERN,
+    NonEmptyStr,
+    validate_id_pattern,
+)
 from .stage import InfoModality
-
-
-NonEmptyStr = Annotated[str, Field(min_length=1)]
-
-EVIDENCE_ID_PATTERN = re.compile(r"^(ev|evd)[_-][A-Za-z0-9][A-Za-z0-9_-]*$")
-STAGE_ID_PATTERN = re.compile(r"^stage[_-][A-Za-z0-9][A-Za-z0-9_-]*$")
-SOURCE_DOC_ID_PATTERN = re.compile(r"^doc[_-][A-Za-z0-9][A-Za-z0-9_-]*$")
 
 
 class EvidenceCategory(StrEnum):
@@ -174,23 +174,32 @@ class EvidenceAtom(BaseModel):
     @field_validator("evidence_id")
     @classmethod
     def validate_evidence_id_pattern(cls, value: str) -> str:
-        if not EVIDENCE_ID_PATTERN.fullmatch(value):
-            raise ValueError("evidence_id must match pattern like ev_001 or evd-001")
-        return value
+        return validate_id_pattern(
+            value,
+            pattern=EVIDENCE_ID_PATTERN,
+            field_name="evidence_id",
+            example="ev_001 or evd-001",
+        )
 
     @field_validator("stage_id")
     @classmethod
     def validate_stage_id_pattern(cls, value: str) -> str:
-        if not STAGE_ID_PATTERN.fullmatch(value):
-            raise ValueError("stage_id must match pattern like stage_001 or stage-001")
-        return value
+        return validate_id_pattern(
+            value,
+            pattern=STAGE_ID_PATTERN,
+            field_name="stage_id",
+            example="stage_001 or stage-001",
+        )
 
     @field_validator("source_doc_id")
     @classmethod
     def validate_source_doc_id_pattern(cls, value: str) -> str:
-        if not SOURCE_DOC_ID_PATTERN.fullmatch(value):
-            raise ValueError("source_doc_id must match pattern like doc_001 or doc-001")
-        return value
+        return validate_id_pattern(
+            value,
+            pattern=SOURCE_DOC_ID_PATTERN,
+            field_name="source_doc_id",
+            example="doc_001 or doc-001",
+        )
 
     @field_validator(
         "value_text",

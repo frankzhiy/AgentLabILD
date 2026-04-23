@@ -28,15 +28,16 @@ from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
+from .common import (
+    CLAIM_REF_ID_PATTERN,
+    HYPOTHESIS_ID_PATTERN,
+    STAGE_ID_PATTERN,
+    NonEmptyStr,
+    validate_id_pattern,
+)
 
-NonEmptyStr = Annotated[str, Field(min_length=1)]
 HypothesisLabel = Annotated[str, Field(min_length=1, max_length=160)]
 NextBestTestText = Annotated[str, Field(min_length=1, max_length=120)]
-
-
-HYPOTHESIS_ID_PATTERN = re.compile(r"^hyp(?:othesis)?[_-][A-Za-z0-9][A-Za-z0-9_-]*$")
-STAGE_ID_PATTERN = re.compile(r"^stage[_-][A-Za-z0-9][A-Za-z0-9_-]*$")
-CLAIM_REF_ID_PATTERN = re.compile(r"^claim_ref[_-][A-Za-z0-9][A-Za-z0-9_-]*$")
 
 
 class HypothesisStatus(StrEnum):
@@ -93,18 +94,22 @@ class HypothesisState(BaseModel):
     @field_validator("hypothesis_id")
     @classmethod
     def validate_hypothesis_id_pattern(cls, value: str) -> str:
-        if not HYPOTHESIS_ID_PATTERN.fullmatch(value):
-            raise ValueError(
-                "hypothesis_id must match pattern like hyp_001 or hypothesis-001"
-            )
-        return value
+        return validate_id_pattern(
+            value,
+            pattern=HYPOTHESIS_ID_PATTERN,
+            field_name="hypothesis_id",
+            example="hyp_001 or hypothesis-001",
+        )
 
     @field_validator("stage_id")
     @classmethod
     def validate_stage_id_pattern(cls, value: str) -> str:
-        if not STAGE_ID_PATTERN.fullmatch(value):
-            raise ValueError("stage_id must match pattern like stage_001 or stage-001")
-        return value
+        return validate_id_pattern(
+            value,
+            pattern=STAGE_ID_PATTERN,
+            field_name="stage_id",
+            example="stage_001 or stage-001",
+        )
 
     @field_validator("hypothesis_key", mode="before")
     @classmethod

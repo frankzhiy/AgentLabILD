@@ -153,3 +153,21 @@
 - 变更原因: 按 Direction A 消除语义错位（envelope 仍做硬结构校验并抛异常，validation_report 变为可选外部报告），并将 ValidationIssue/StateValidationReport 扩展为 target-aware、blocking-aware、stage/case identity-aware 的可审计结构；同时以最小改动为主要对象加入固定 kind 自描述标签。
 - 验证方式: `python -m pytest -q tests/test_phase1_state_envelope.py tests/test_stage_context.py tests/test_evidence_schema.py tests/test_claim_reference_schema.py tests/test_hypothesis_state_schema.py tests/test_action_candidate_schema.py tests/test_hypothesis_board_init.py`（116 passed）；`python -m pytest -q`（118 passed）。
 
+- 任务: Phase 1-1 状态层结构闭环修复（claim 双向绑定 + board 集合闭环 + state_id）
+- 变更文件:
+	- src/schemas/common.py
+	- src/schemas/stage.py
+	- src/schemas/evidence.py
+	- src/schemas/claim.py
+	- src/schemas/hypothesis.py
+	- src/schemas/action.py
+	- src/schemas/board.py
+	- src/schemas/validation.py
+	- src/schemas/state.py
+	- tests/test_claim_reference_schema.py
+	- tests/test_phase1_state_envelope.py
+	- tests/test_common_id_patterns.py
+	- teach/phase1_1_structural_closure_refinement_2026_04_23.md
+- 变更原因: 修复 Phase1StateEnvelope 在结构关系上的单向校验缺口，新增 claim_ref 使用方与 ClaimReference 目标回指的一致性校验；将 board_init 三组 id 与 envelope 实体集合做闭环一致性校验；新增 ActionCandidate.linked_hypothesis_ids 的实体存在性校验；补齐 state_id 并增加 parent_state_id 自环阻断；同时集中并复用核心 id pattern，降低规则分散带来的漂移风险。
+- 验证方式: `python -m pytest -q tests/test_claim_reference_schema.py tests/test_phase1_state_envelope.py tests/test_common_id_patterns.py`（51 passed）；`python -m pytest -q`（144 passed）。
+
