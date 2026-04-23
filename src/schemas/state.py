@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from typing import TypedDict
 
+from .claim import ClaimReference, ClaimRelation, ClaimStrength, ClaimTargetKind
 from .evidence import EvidenceAtom
 from .stage import (
     InfoModality,
@@ -27,6 +28,10 @@ class SkeletonState(TypedDict, total=False):
 
 
 __all__ = [
+    "ClaimReference",
+    "ClaimRelation",
+    "ClaimStrength",
+    "ClaimTargetKind",
     "EvidenceAtom",
     "InfoModality",
     "SkeletonState",

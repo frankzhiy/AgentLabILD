@@ -42,3 +42,22 @@
 - 变更原因: 将 id 防混用逻辑从“三字段不得相等”改为命名模式校验；将 category/certainty/temporality/subject 调整为更一致的临床语义分层；新增 category-modality 一致性校验，防止语义冲突对象进入状态层。
 - 验证方式: `python -m pytest -q`（32 passed）。
 
+# 2026-04-23
+
+- 任务: Phase 1-1 ClaimReference 权威 claim-证据链接模型落地
+- 变更文件:
+	- src/schemas/claim.py
+	- src/schemas/state.py
+	- tests/test_claim_reference_schema.py
+	- teach/phase1_1_claim_reference_schema_2026_04_23.md
+- 变更原因: 在 EvidenceAtom 与后续 HypothesisState / ActionCandidate 之间建立显式、可验证、可追溯的 claim-to-evidence 链接对象；通过严格校验阻断无证据 claim、id 混用和对象自引用。
+- 验证方式: `python -m pytest -q tests/test_claim_reference_schema.py` 与 `python -m pytest -q`。
+
+- 任务: Phase 1-1 ClaimReference 语义边界澄清与原子文本约束
+- 变更文件:
+	- src/schemas/claim.py
+	- tests/test_claim_reference_schema.py
+	- teach/phase1_1_claim_reference_schema_2026_04_23.md
+- 变更原因: 明确 strength 表示 claim-to-target relation 强度（非诊断置信度）；明确 claim_ref_id 与 claim_key 角色分离；为 claim_text 增加 max_length=300 以降低长段解释文本污染结构化状态的风险。
+- 验证方式: `python -m pytest -q tests/test_claim_reference_schema.py`。
+
