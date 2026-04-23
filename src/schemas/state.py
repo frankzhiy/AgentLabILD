@@ -8,14 +8,14 @@ from __future__ import annotations
 
 import re
 from datetime import datetime
-from typing import Iterable, TypedDict
+from typing import TypedDict
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from .action import ActionCandidate, ActionStatus, ActionType, ActionUrgency
 from .board import BoardInitSource, BoardStatus, HypothesisBoardInit
 from .claim import ClaimReference, ClaimRelation, ClaimStrength, ClaimTargetKind
-from .common import NonEmptyStr
+from .common import NonEmptyStr, find_duplicate_items
 from .evidence import EvidenceAtom
 from .hypothesis import HypothesisConfidenceLevel, HypothesisState, HypothesisStatus
 from .stage import (
@@ -26,28 +26,28 @@ from .stage import (
     TriggerType,
     VisibilityPolicyHint,
 )
-from .validation import StateValidationReport, ValidationIssue, ValidationSeverity
+from .validation import (
+    StateValidationReport,
+    ValidationIssue,
+    ValidationSeverity,
+    ValidationTargetKind,
+)
 
 
 CASE_ID_PATTERN = re.compile(r"^case[_-][A-Za-z0-9][A-Za-z0-9_-]*$")
 STATE_ID_PATTERN = re.compile(r"^state[_-][A-Za-z0-9][A-Za-z0-9_-]*$")
 
 
-def _collect_duplicate_ids(values: Iterable[str]) -> tuple[str, ...]:
-    seen: set[str] = set()
-    duplicates: set[str] = set()
-
-    for value in values:
-        if value in seen:
-            duplicates.add(value)
-            continue
-        seen.add(value)
-
-    return tuple(sorted(duplicates))
-
-
 class Phase1StateEnvelope(BaseModel):
-    """Authoritative root state envelope for Phase 1-1."""
+    """Authoritative root state envelope for Phase 1-1.
+
+    Envelope-level model validators enforce hard structural integrity. These
+    checks intentionally raise exceptions for invalid root construction.
+
+    `validation_report` is an optional external validator/write-gate report for
+    accepted or reviewable state packages; it is not used to absorb envelope
+    construction failures in this layer.
+    """
 
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
 
@@ -58,7 +58,7 @@ class Phase1StateEnvelope(BaseModel):
     claim_references: tuple[ClaimReference, ...] = Field(default_factory=tuple)
     hypotheses: tuple[HypothesisState, ...] = Field(default_factory=tuple)
     action_candidates: tuple[ActionCandidate, ...] = Field(default_factory=tuple)
-    validation_report: StateValidationReport
+    validation_report: StateValidationReport | None = None
     state_version: int = Field(ge=1, default=1)
     parent_state_id: str | None = None
     created_at: datetime
@@ -91,6 +91,7 @@ class Phase1StateEnvelope(BaseModel):
 
     @model_validator(mode="after")
     def validate_envelope_consistency(self) -> "Phase1StateEnvelope":
+        # These checks are hard integrity guards for root-envelope construction.
         errors: list[str] = []
         stage_id = self.stage_context.stage_id
 
@@ -145,13 +146,13 @@ class Phase1StateEnvelope(BaseModel):
                 + ", ".join(sorted(misaligned_action_ids))
             )
 
-        duplicate_evidence_ids = _collect_duplicate_ids(
+        duplicate_evidence_ids = find_duplicate_items(
             atom.evidence_id for atom in self.evidence_atoms
         )
         if duplicate_evidence_ids:
             errors.append("duplicate ids in evidence_atoms: " + ", ".join(duplicate_evidence_ids))
 
-        duplicate_claim_ref_ids = _collect_duplicate_ids(
+        duplicate_claim_ref_ids = find_duplicate_items(
             claim_ref.claim_ref_id for claim_ref in self.claim_references
         )
         if duplicate_claim_ref_ids:
@@ -159,13 +160,13 @@ class Phase1StateEnvelope(BaseModel):
                 "duplicate ids in claim_references: " + ", ".join(duplicate_claim_ref_ids)
             )
 
-        duplicate_hypothesis_ids = _collect_duplicate_ids(
+        duplicate_hypothesis_ids = find_duplicate_items(
             hypothesis.hypothesis_id for hypothesis in self.hypotheses
         )
         if duplicate_hypothesis_ids:
             errors.append("duplicate ids in hypotheses: " + ", ".join(duplicate_hypothesis_ids))
 
-        duplicate_action_ids = _collect_duplicate_ids(
+        duplicate_action_ids = find_duplicate_items(
             action.action_candidate_id for action in self.action_candidates
         )
         if duplicate_action_ids:
@@ -250,5 +251,6 @@ __all__ = [
     "TriggerType",
     "ValidationIssue",
     "ValidationSeverity",
+    "ValidationTargetKind",
     "VisibilityPolicyHint",
 ]

@@ -46,6 +46,17 @@ def test_action_candidate_valid_construction() -> None:
     assert candidate.linked_hypothesis_ids == ("hyp-001", "hypothesis-002")
 
 
+def test_action_candidate_kind_defaults_and_rejects_invalid_value() -> None:
+    candidate = ActionCandidate(**_base_payload())
+    assert candidate.kind == "action_candidate"
+
+    payload = _base_payload()
+    payload["kind"] = "action"
+
+    with pytest.raises(ValidationError):
+        ActionCandidate(**payload)
+
+
 def test_action_candidate_is_stage_aware() -> None:
     payload = _base_payload()
     payload["stage_id"] = "doc-001"

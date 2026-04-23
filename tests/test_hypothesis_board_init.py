@@ -39,6 +39,17 @@ def test_hypothesis_board_init_valid_construction() -> None:
     assert board.ranked_hypothesis_ids == ("hypothesis-002",)
 
 
+def test_hypothesis_board_init_kind_defaults_and_rejects_invalid_value() -> None:
+    board = HypothesisBoardInit(**_base_payload())
+    assert board.kind == "hypothesis_board_init"
+
+    payload = _base_payload()
+    payload["kind"] = "board_init"
+
+    with pytest.raises(ValidationError):
+        HypothesisBoardInit(**payload)
+
+
 def test_board_status_has_minimal_lifecycle_taxonomy() -> None:
     expected = {"draft", "initialized", "ready_for_review"}
     actual = {item.value for item in BoardStatus}

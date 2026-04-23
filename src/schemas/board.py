@@ -26,7 +26,7 @@ from __future__ import annotations
 import re
 from datetime import datetime
 from enum import StrEnum
-from typing import Annotated
+from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
@@ -66,6 +66,7 @@ class HypothesisBoardInit(BaseModel):
 
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
 
+    kind: Literal["hypothesis_board_init"] = "hypothesis_board_init"
     board_id: NonEmptyStr
     case_id: NonEmptyStr
     stage_id: NonEmptyStr

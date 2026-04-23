@@ -49,6 +49,17 @@ def test_stage_context_valid_construction() -> None:
     assert "ctd_ild_screen" in ctx.clinical_question_tags
 
 
+def test_stage_context_kind_defaults_and_rejects_invalid_value() -> None:
+    ctx = StageContext(**_base_payload())
+    assert ctx.kind == "stage_context"
+
+    payload = _base_payload()
+    payload["kind"] = "stage"
+
+    with pytest.raises(ValidationError):
+        StageContext(**payload)
+
+
 def test_stage_focus_is_operational_taxonomy_only() -> None:
     expected = {
         "baseline_structuring",

@@ -101,9 +101,12 @@ def test_hypothesis_forbids_direct_evidence_ids_field() -> None:
         HypothesisState(**payload)
 
 
-def test_hypothesis_forbids_kind_field_for_now() -> None:
+def test_hypothesis_kind_defaults_and_rejects_invalid_value() -> None:
+    state = HypothesisState(**_base_payload())
+    assert state.kind == "hypothesis_state"
+
     payload = _base_payload()
-    payload["kind"] = "hypothesis_state"
+    payload["kind"] = "hypothesis"
 
     with pytest.raises(ValidationError):
         HypothesisState(**payload)

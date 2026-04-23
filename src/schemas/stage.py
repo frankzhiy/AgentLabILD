@@ -46,7 +46,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from enum import StrEnum
-from typing import Annotated
+from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
@@ -124,6 +124,7 @@ class StageContext(BaseModel):
 
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
 
+    kind: Literal["stage_context"] = "stage_context"
     stage_id: NonEmptyStr
     case_id: NonEmptyStr
     stage_index: int = Field(ge=0)

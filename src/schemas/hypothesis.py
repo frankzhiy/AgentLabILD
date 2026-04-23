@@ -24,7 +24,7 @@ from __future__ import annotations
 
 import re
 from enum import StrEnum
-from typing import Annotated
+from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
@@ -63,6 +63,7 @@ class HypothesisState(BaseModel):
 
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
 
+    kind: Literal["hypothesis_state"] = "hypothesis_state"
     hypothesis_id: NonEmptyStr = Field(
         description="Unique object id for this HypothesisState instance."
     )

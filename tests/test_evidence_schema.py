@@ -50,6 +50,17 @@ def test_evidence_atom_valid_construction() -> None:
     assert atom.category is EvidenceCategory.IMAGING_FINDING
 
 
+def test_evidence_atom_kind_defaults_and_rejects_invalid_value() -> None:
+    atom = EvidenceAtom(**_base_payload())
+    assert atom.kind == "evidence_atom"
+
+    payload = _base_payload()
+    payload["kind"] = "evidence"
+
+    with pytest.raises(ValidationError):
+        EvidenceAtom(**payload)
+
+
 def test_authoritative_field_must_be_non_empty() -> None:
     payload = _base_payload()
     payload["statement"] = "   "

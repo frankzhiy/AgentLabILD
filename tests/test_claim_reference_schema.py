@@ -37,6 +37,17 @@ def test_claim_reference_valid_construction() -> None:
     assert claim_ref.evidence_ids == ("evd-001", "evd-002")
 
 
+def test_claim_reference_kind_defaults_and_rejects_invalid_value() -> None:
+    claim_ref = ClaimReference(**_base_payload())
+    assert claim_ref.kind == "claim_reference"
+
+    payload = _base_payload()
+    payload["kind"] = "claim"
+
+    with pytest.raises(ValidationError):
+        ClaimReference(**payload)
+
+
 def test_duplicate_evidence_ids_rejected() -> None:
     payload = _base_payload()
     payload["evidence_ids"] = ["evd-001", "evd-001"]

@@ -25,11 +25,13 @@ from src.schemas.state import (
     StateValidationReport as ExportedStateValidationReport,
     ValidationIssue as ExportedValidationIssue,
     ValidationSeverity as ExportedValidationSeverity,
+    ValidationTargetKind as ExportedValidationTargetKind,
 )
 from src.schemas.validation import (
     StateValidationReport,
     ValidationIssue,
     ValidationSeverity,
+    ValidationTargetKind,
 )
 
 
@@ -117,9 +119,17 @@ def _base_payload() -> dict[str, object]:
             }
         ],
         "validation_report": {
+            "report_id": "report-001",
+            "case_id": "case-abc",
+            "stage_id": "stage-001",
+            "board_id": "board-001",
             "generated_at": created_at,
             "is_valid": True,
+            "has_blocking_issue": False,
             "issues": [],
+            "validator_name": "phase1_external_validator",
+            "validator_version": "1.0.0",
+            "summary": "No blocking issue found.",
         },
         "state_version": 1,
         "parent_state_id": None,
@@ -129,44 +139,139 @@ def _base_payload() -> dict[str, object]:
 
 def test_state_validation_report_valid_construction() -> None:
     report = StateValidationReport(
+        report_id="report-002",
+        case_id="case-abc",
+        stage_id="stage-001",
+        board_id="board-001",
         generated_at=datetime(2026, 4, 23, 14, 0, 0),
         is_valid=False,
+        has_blocking_issue=True,
         issues=(
             ValidationIssue(
+                issue_id="issue-001",
                 issue_code="stage_id_alignment",
                 severity=ValidationSeverity.ERROR,
                 message="stage_id mismatch",
+                target_kind=ValidationTargetKind.EVIDENCE_ATOM,
+                target_id="evd-001",
                 field_path="evidence_atoms[0].stage_id",
                 related_ids=("evd-001",),
+                blocking=True,
+                suggested_fix="align evidence_atoms[0].stage_id with stage_context.stage_id",
             ),
         ),
+        validator_name="phase1_external_validator",
+        validator_version="1.0.0",
+        summary="Blocking mismatch detected.",
     )
 
     assert report.is_valid is False
+    assert report.has_blocking_issue is True
     assert report.issues[0].severity is ValidationSeverity.ERROR
+    assert report.issues[0].target_kind is ValidationTargetKind.EVIDENCE_ATOM
 
 
 def test_state_validation_report_rejects_valid_flag_with_error_issue() -> None:
     with pytest.raises(ValidationError):
         StateValidationReport(
+            report_id="report-003",
+            case_id="case-abc",
+            stage_id="stage-001",
+            board_id="board-001",
             generated_at=datetime(2026, 4, 23, 14, 0, 0),
             is_valid=True,
+            has_blocking_issue=True,
             issues=(
                 ValidationIssue(
+                    issue_id="issue-002",
                     issue_code="missing_claim_reference",
                     severity=ValidationSeverity.ERROR,
                     message="claim_ref-999 was not found",
+                    target_kind=ValidationTargetKind.HYPOTHESIS_STATE,
+                    target_id="hyp-001",
+                    blocking=True,
                 ),
             ),
+            validator_name="phase1_external_validator",
+            validator_version="1.0.0",
         )
 
 
 def test_state_validation_report_rejects_invalid_without_issues() -> None:
     with pytest.raises(ValidationError):
         StateValidationReport(
+            report_id="report-004",
+            case_id="case-abc",
+            stage_id="stage-001",
+            board_id="board-001",
             generated_at=datetime(2026, 4, 23, 14, 0, 0),
             is_valid=False,
+            has_blocking_issue=False,
             issues=(),
+            validator_name="phase1_external_validator",
+            validator_version="1.0.0",
+        )
+
+
+def test_validation_issue_rejects_duplicate_related_ids() -> None:
+    with pytest.raises(ValidationError):
+        ValidationIssue(
+            issue_id="issue-010",
+            issue_code="duplicate_related_ids",
+            severity=ValidationSeverity.WARNING,
+            message="related_ids duplicates are not allowed",
+            target_kind=ValidationTargetKind.CLAIM_REFERENCE,
+            target_id="claim_ref-001",
+            related_ids=("claim_ref-001", "claim_ref-001"),
+            blocking=False,
+        )
+
+
+def test_validation_issue_rejects_malformed_issue_code() -> None:
+    with pytest.raises(ValidationError):
+        ValidationIssue(
+            issue_id="issue-011",
+            issue_code="Invalid Issue Code",
+            severity=ValidationSeverity.INFO,
+            message="bad issue code format",
+            target_kind=ValidationTargetKind.OTHER,
+            target_id="obj-001",
+            blocking=False,
+        )
+
+
+def test_state_validation_report_rejects_duplicate_issue_ids() -> None:
+    issue_a = ValidationIssue(
+        issue_id="issue-020",
+        issue_code="minor_alignment_notice",
+        severity=ValidationSeverity.WARNING,
+        message="alignment warning A",
+        target_kind=ValidationTargetKind.PHASE1_STATE_ENVELOPE,
+        target_id="state-001",
+        blocking=False,
+    )
+    issue_b = ValidationIssue(
+        issue_id="issue-020",
+        issue_code="minor_alignment_notice_b",
+        severity=ValidationSeverity.WARNING,
+        message="alignment warning B",
+        target_kind=ValidationTargetKind.PHASE1_STATE_ENVELOPE,
+        target_id="state-001",
+        blocking=False,
+    )
+
+    with pytest.raises(ValidationError):
+        StateValidationReport(
+            report_id="report-005",
+            case_id="case-abc",
+            stage_id="stage-001",
+            board_id="board-001",
+            generated_at=datetime(2026, 4, 23, 14, 0, 0),
+            is_valid=False,
+            has_blocking_issue=False,
+            issues=(issue_a, issue_b),
+            validator_name="phase1_external_validator",
+            validator_version="1.0.0",
         )
 
 
@@ -175,8 +280,18 @@ def test_phase1_state_envelope_valid_construction() -> None:
 
     assert envelope.case_id == "case-abc"
     assert envelope.stage_context.stage_id == "stage-001"
+    assert envelope.validation_report is not None
     assert envelope.validation_report.is_valid is True
     assert envelope.state_version == 1
+
+
+def test_phase1_state_envelope_allows_validation_report_none() -> None:
+    payload = _base_payload()
+    payload["validation_report"] = None
+
+    envelope = Phase1StateEnvelope(**payload)
+
+    assert envelope.validation_report is None
 
 
 def test_phase1_state_envelope_rejects_stage_id_misalignment() -> None:
@@ -236,3 +351,4 @@ def test_state_module_exports_validation_types() -> None:
     assert ExportedValidationSeverity is ValidationSeverity
     assert ExportedValidationIssue is ValidationIssue
     assert ExportedStateValidationReport is StateValidationReport
+    assert ExportedValidationTargetKind is ValidationTargetKind

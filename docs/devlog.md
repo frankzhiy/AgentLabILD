@@ -131,3 +131,25 @@
 - 变更原因: 在 Phase 1-1 收口阶段补齐“结构化校验报告对象 + 根状态封装对象”，并在 envelope 层实现 stage_id 对齐、重复 id、缺失 claim/evidence 引用、ranked hypothesis 存在性等一致性校验，确保状态写入前具备可审计的机制边界。
 - 验证方式: `python -m pytest -q tests/test_phase1_state_envelope.py` 与 `python -m pytest -q`（本次运行结果：10 passed / 109 passed）。
 
+- 任务: Phase 1-1 Direction A 语义收敛（ValidationIssue/StateValidationReport/common/envelope）
+- 变更文件:
+	- src/schemas/common.py
+	- src/schemas/validation.py
+	- src/schemas/state.py
+	- src/schemas/stage.py
+	- src/schemas/evidence.py
+	- src/schemas/claim.py
+	- src/schemas/hypothesis.py
+	- src/schemas/action.py
+	- src/schemas/board.py
+	- tests/test_phase1_state_envelope.py
+	- tests/test_stage_context.py
+	- tests/test_evidence_schema.py
+	- tests/test_claim_reference_schema.py
+	- tests/test_hypothesis_state_schema.py
+	- tests/test_action_candidate_schema.py
+	- tests/test_hypothesis_board_init.py
+	- teach/phase1_1_direction_a_validation_refinement_2026_04_23.md
+- 变更原因: 按 Direction A 消除语义错位（envelope 仍做硬结构校验并抛异常，validation_report 变为可选外部报告），并将 ValidationIssue/StateValidationReport 扩展为 target-aware、blocking-aware、stage/case identity-aware 的可审计结构；同时以最小改动为主要对象加入固定 kind 自描述标签。
+- 验证方式: `python -m pytest -q tests/test_phase1_state_envelope.py tests/test_stage_context.py tests/test_evidence_schema.py tests/test_claim_reference_schema.py tests/test_hypothesis_state_schema.py tests/test_action_candidate_schema.py tests/test_hypothesis_board_init.py`（116 passed）；`python -m pytest -q`（118 passed）。
+

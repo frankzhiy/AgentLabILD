@@ -24,7 +24,7 @@ from __future__ import annotations
 
 import re
 from enum import StrEnum
-from typing import Annotated
+from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
@@ -77,6 +77,7 @@ class ClaimReference(BaseModel):
 
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
 
+    kind: Literal["claim_reference"] = "claim_reference"
     claim_ref_id: NonEmptyStr = Field(
         description="Unique object id for this ClaimReference instance."
     )
