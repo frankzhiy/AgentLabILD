@@ -217,3 +217,15 @@
 - 变更原因: 将 monolithic provenance checker 进行职责拆分（issue 定义、evidence 检查、claim 检查、编排器），在不改变 issue_code、blocking 语义、兼容模式和公共 validator 行为的前提下提升模块边界清晰度。
 - 验证方式: `python -m pytest -q tests/test_provenance_checker.py tests/test_provenance_validator.py`（21 passed）；`python -m pytest -q`（179 passed）。
 
+- 任务: Phase 1-3 write-gate contract layer（WriteDecisionStatus / WritePolicy / WriteDecision）
+- 变更文件:
+	- src/state/write_status.py
+	- src/state/write_policy.py
+	- src/state/write_decision.py
+	- src/state/__init__.py
+	- tests/test_write_contracts.py
+	- docs/devlog.md
+	- teach/phase1_3_write_gate_contract_layer_2026_04_23.md
+- 变更原因: 启动 Phase 1-3，补齐 validator-gated state write 的核心合同对象，明确 accepted/rejected/manual_review 判定、策略化 should_persist 计算与阻断语义；保持 Direction A 不变（envelope 结构失败仍为硬失败，外部 validator 继续输出 StateValidationReport）。
+- 验证方式: `python -m pytest -q tests/test_write_contracts.py tests/test_phase1_state_envelope.py tests/test_provenance_validator.py`。
+
