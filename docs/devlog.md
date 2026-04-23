@@ -120,3 +120,14 @@
 - 变更原因: 补齐 board root 的 id 约束对称性（新增 case_id pattern），将 BoardStatus 扩展为最小生命周期集合，并新增 init_source 与 parent_board_id 的跨字段一致性校验，避免阶段演化语义漂移。
 - 验证方式: `python -m pytest -q tests/test_hypothesis_board_init.py` 与 `python -m pytest -q`。
 
+- 任务: Phase 1-1 StateValidationReport 与 Phase1StateEnvelope 根状态封装落地
+- 变更文件:
+	- src/schemas/common.py
+	- src/schemas/validation.py
+	- src/schemas/state.py
+	- tests/test_phase1_state_envelope.py
+	- docs/devlog.md
+	- teach/phase1_1_state_envelope_validation_report_2026_04_23.md
+- 变更原因: 在 Phase 1-1 收口阶段补齐“结构化校验报告对象 + 根状态封装对象”，并在 envelope 层实现 stage_id 对齐、重复 id、缺失 claim/evidence 引用、ranked hypothesis 存在性等一致性校验，确保状态写入前具备可审计的机制边界。
+- 验证方式: `python -m pytest -q tests/test_phase1_state_envelope.py` 与 `python -m pytest -q`（本次运行结果：10 passed / 109 passed）。
+
