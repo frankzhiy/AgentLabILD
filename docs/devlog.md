@@ -171,3 +171,27 @@
 - 变更原因: 修复 Phase1StateEnvelope 在结构关系上的单向校验缺口，新增 claim_ref 使用方与 ClaimReference 目标回指的一致性校验；将 board_init 三组 id 与 envelope 实体集合做闭环一致性校验；新增 ActionCandidate.linked_hypothesis_ids 的实体存在性校验；补齐 state_id 并增加 parent_state_id 自环阻断；同时集中并复用核心 id pattern，降低规则分散带来的漂移风险。
 - 验证方式: `python -m pytest -q tests/test_claim_reference_schema.py tests/test_phase1_state_envelope.py tests/test_common_id_patterns.py`（51 passed）；`python -m pytest -q`（144 passed）。
 
+- 任务: Phase 1-2 provenance 包（PROV-lite）落地与兼容挂接
+- 变更文件:
+	- src/provenance/model.py
+	- src/provenance/__init__.py
+	- src/schemas/evidence.py
+	- src/schemas/claim.py
+	- tests/test_provenance_model.py
+	- docs/devlog.md
+	- teach/phase1_2_provenance_package_2026_04_23.md
+- 变更原因: 在不重构现有 EvidenceAtom/ClaimReference 主体结构的前提下，新增最小 provenance 机制对象（SourceAnchor、ExtractionActivity、EvidenceProvenance、ClaimProvenance），并通过可选字段挂接实现向后兼容，避免 free-text provenance blob，强化 stage-aware 可追溯性。
+- 验证方式: `python -m pytest -q tests/test_provenance_model.py tests/test_evidence_schema.py tests/test_claim_reference_schema.py`（46 passed）；`python -m pytest -q`（158 passed）。
+
+- 任务: Phase 1-2 provenance checking（checker + validator）
+- 变更文件:
+	- src/provenance/checker.py
+	- src/validators/provenance_validator.py
+	- src/validators/__init__.py
+	- tests/test_provenance_checker.py
+	- tests/test_provenance_validator.py
+	- docs/devlog.md
+	- teach/phase1_2_provenance_checking_2026_04_23.md
+- 变更原因: 新增外部机制化 provenance 检查链路，覆盖 source span 完整性与顺序、stage/case 对齐、source_doc 可见性、claim provenance 与 ClaimReference.evidence_ids 一致性、orphan/missing provenance，并输出可直接转换为 StateValidationReport 的结构化 issue；保持 schema 与 pipeline 语义不变。
+- 验证方式: `python -m pytest -q tests/test_provenance_checker.py tests/test_provenance_validator.py`（13 passed）；`python -m pytest -q`（全量回归通过）。
+

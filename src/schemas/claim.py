@@ -28,6 +28,7 @@ from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
+from ..provenance.model import ClaimProvenance
 from .common import (
     ACTION_CANDIDATE_ID_PATTERN,
     CLAIM_REF_ID_PATTERN,
@@ -100,6 +101,7 @@ class ClaimReference(BaseModel):
         ),
     )
     non_authoritative_note: str | None = None
+    provenance: ClaimProvenance | None = None
 
     @field_validator("target_kind", mode="before")
     @classmethod
@@ -176,6 +178,25 @@ class ClaimReference(BaseModel):
                 raise ValueError(
                     "target_id must match action pattern like action_001 or action_candidate-001"
                 )
+
+        return self
+
+    @model_validator(mode="after")
+    def validate_provenance_alignment(self) -> "ClaimReference":
+        if self.provenance is None:
+            return self
+
+        if self.provenance.stage_id != self.stage_id:
+            raise ValueError("provenance.stage_id must equal claim stage_id")
+
+        if self.provenance.claim_ref_id != self.claim_ref_id:
+            raise ValueError("provenance.claim_ref_id must equal claim_ref_id")
+
+        missing_evidence_ids = set(self.provenance.evidence_ids) - set(self.evidence_ids)
+        if missing_evidence_ids:
+            raise ValueError(
+                "provenance.evidence_ids must be subset of claim evidence_ids"
+            )
 
         return self
 

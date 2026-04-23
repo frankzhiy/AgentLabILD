@@ -26,6 +26,7 @@ from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
+from ..provenance.model import EvidenceProvenance
 from .common import (
     EVIDENCE_ID_PATTERN,
     SOURCE_DOC_ID_PATTERN,
@@ -170,6 +171,7 @@ class EvidenceAtom(BaseModel):
     source_span_end: int | None = Field(default=None, ge=0)
     extraction_method: str | None = None
     non_authoritative_note: str | None = None
+    provenance: EvidenceProvenance | None = None
 
     @field_validator("evidence_id")
     @classmethod
@@ -256,6 +258,19 @@ class EvidenceAtom(BaseModel):
                 f"category={self.category.value} does not allow modality={self.modality.value}; "
                 f"allowed={allowed_text}"
             )
+
+        return self
+
+    @model_validator(mode="after")
+    def validate_provenance_alignment(self) -> "EvidenceAtom":
+        if self.provenance is None:
+            return self
+
+        if self.provenance.stage_id != self.stage_id:
+            raise ValueError("provenance.stage_id must equal evidence stage_id")
+
+        if self.provenance.evidence_id != self.evidence_id:
+            raise ValueError("provenance.evidence_id must equal evidence_id")
 
         return self
 
