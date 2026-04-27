@@ -5,6 +5,8 @@ from __future__ import annotations
 from copy import deepcopy
 from datetime import datetime, timedelta
 
+import pytest
+
 import src.state.state_writer as state_writer_module
 from src.schemas.validation import (
     StateValidationReport,
@@ -16,7 +18,6 @@ from src.state import (
     InMemoryStateSink,
     NoOpStateSink,
     WriteDecisionStatus,
-    WritePolicy,
     attempt_phase1_write,
 )
 from src.validators.pipeline import (
@@ -115,14 +116,14 @@ def test_state_writer_manual_review_not_persisted_by_default(
 
     assert decision.status is WriteDecisionStatus.MANUAL_REVIEW
     assert decision.should_persist is False
-    assert decision.accepted_envelope is not None
+    assert decision.accepted_envelope is None
     assert len(sink) == 0
 
 
-def test_state_writer_manual_review_persistence_follows_write_policy(
+def test_state_writer_manual_review_never_reaches_sink_persist(
     monkeypatch: object,
 ) -> None:
-    sink = InMemoryStateSink()
+    sink = NoOpStateSink()
     manual_result = _build_manual_review_pipeline_result()
 
     monkeypatch.setattr(
@@ -131,17 +132,12 @@ def test_state_writer_manual_review_persistence_follows_write_policy(
         lambda *args, **kwargs: manual_result,
     )
 
-    decision = attempt_phase1_write(
-        build_valid_envelope(),
-        sink=sink,
-        policy=WritePolicy(allow_manual_review_persist=True),
-    )
+    decision = attempt_phase1_write(build_valid_envelope(), sink=sink)
 
     assert decision.status is WriteDecisionStatus.MANUAL_REVIEW
-    assert decision.should_persist is True
-    assert decision.accepted_envelope is not None
-    assert len(sink) == 1
-    assert sink.list_state_ids() == (decision.candidate_state_id,)
+    assert decision.should_persist is False
+    assert decision.accepted_envelope is None
+    assert sink.persist_call_count == 0
 
 
 def test_state_writer_raw_invalid_payload_returns_rejected_decision() -> None:
@@ -171,7 +167,7 @@ def test_state_writer_preserves_candidate_state_id_and_accepted_envelope_consist
     assert decision.accepted_envelope.state_id == decision.candidate_state_id
 
 
-def test_state_writer_noop_sink_keeps_normal_decision_without_persistence() -> None:
+def test_state_writer_noop_sink_receives_persist_call_but_discards_state() -> None:
     envelope = build_valid_envelope()
     sink = NoOpStateSink()
 
@@ -185,6 +181,20 @@ def test_state_writer_noop_sink_keeps_normal_decision_without_persistence() -> N
     assert decision.should_persist is True
     assert sink.persist_call_count == 1
     assert sink.list_state_ids() == ()
+
+
+def test_state_writer_persistence_exceptions_bubble_out() -> None:
+    class FailingSink:
+        def persist(self, envelope: object) -> None:
+            del envelope
+            raise RuntimeError("persist failed")
+
+    with pytest.raises(RuntimeError, match="persist failed"):
+        _ = attempt_phase1_write(
+            build_valid_envelope(),
+            sink=FailingSink(),
+            validation_policy=ValidationPipelinePolicy(require_provenance=True),
+        )
 
 
 def test_state_writer_does_not_mutate_input_envelope_instance() -> None:

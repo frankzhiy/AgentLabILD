@@ -76,6 +76,11 @@ def test_write_policy_default_gate_behavior() -> None:
     ) is False
 
 
+def test_write_policy_rejects_manual_review_override_input() -> None:
+    with pytest.raises(ValidationError):
+        WritePolicy(allow_manual_review_persist=True)
+
+
 def test_write_decision_default_rejected_construction() -> None:
     decision = WriteDecision(
         candidate_state_id="state-001",
@@ -116,26 +121,25 @@ def test_write_decision_rejected_semantics_with_blocking_report() -> None:
     assert decision.accepted_envelope is None
 
 
-def test_write_decision_manual_review_semantics_default_and_policy_override() -> None:
+def test_write_decision_manual_review_semantics_are_conservative() -> None:
     envelope = build_valid_envelope()
     non_blocking_report = _build_report(suffix="201", blocking=False)
 
-    default_decision = WriteDecision(
+    decision = WriteDecision(
         candidate_state_id=envelope.state_id,
         status=WriteDecisionStatus.MANUAL_REVIEW,
         reports=(non_blocking_report,),
     )
-    assert default_decision.should_persist is False
+    assert decision.should_persist is False
+    assert decision.accepted_envelope is None
 
-    override_policy = WritePolicy(allow_manual_review_persist=True)
-    override_decision = WriteDecision(
-        candidate_state_id=envelope.state_id,
-        status=WriteDecisionStatus.MANUAL_REVIEW,
-        policy=override_policy,
-        accepted_envelope=envelope,
-        reports=(non_blocking_report,),
-    )
-    assert override_decision.should_persist is True
+    with pytest.raises(ValidationError):
+        WriteDecision(
+            candidate_state_id=envelope.state_id,
+            status=WriteDecisionStatus.MANUAL_REVIEW,
+            accepted_envelope=envelope,
+            reports=(non_blocking_report,),
+        )
 
 
 def test_write_decision_rejects_invalid_combinations() -> None:
@@ -188,10 +192,8 @@ def test_write_decision_rejects_consistency_mismatch() -> None:
     with pytest.raises(ValidationError):
         WriteDecision(
             candidate_state_id="state-777",
-            status=WriteDecisionStatus.MANUAL_REVIEW,
-            policy=WritePolicy(allow_manual_review_persist=True),
+            status=WriteDecisionStatus.ACCEPTED,
             accepted_envelope=envelope,
-            reports=(non_blocking_report,),
         )
 
 

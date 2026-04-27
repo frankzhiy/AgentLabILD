@@ -18,7 +18,11 @@ from .write_status import WriteDecisionStatus
 
 
 class WriteDecision(BaseModel):
-    """Outcome contract for one attempted Phase1StateEnvelope write."""
+    """Outcome contract for one attempted Phase1StateEnvelope write.
+
+    该对象仅表达 validation-gate 的判定结果，不保证持久化副作用已成功完成。
+    持久化失败会由 writer/sink 异常路径向上抛出。
+    """
 
     model_config = ConfigDict(extra="forbid", frozen=True, str_strip_whitespace=True)
 
@@ -65,8 +69,11 @@ class WriteDecision(BaseModel):
             if self.accepted_envelope is None:
                 raise ValueError("accepted decision requires accepted_envelope")
 
-        if self.status == WriteDecisionStatus.REJECTED and self.accepted_envelope is not None:
-            raise ValueError("rejected decision must not include accepted_envelope")
+        if (
+            self.status != WriteDecisionStatus.ACCEPTED
+            and self.accepted_envelope is not None
+        ):
+            raise ValueError("accepted_envelope must exist only for accepted decisions")
 
         if self.accepted_envelope is not None:
             if self.accepted_envelope.state_id != self.candidate_state_id:
@@ -90,6 +97,9 @@ class WriteDecision(BaseModel):
 
         if resolved_should_persist and self.accepted_envelope is None:
             raise ValueError("accepted_envelope is required when should_persist is true")
+
+        if resolved_should_persist and self.status != WriteDecisionStatus.ACCEPTED:
+            raise ValueError("only accepted decisions can set should_persist to true")
 
         object.__setattr__(self, "has_blocking_issue", resolved_blocking)
         object.__setattr__(self, "should_persist", resolved_should_persist)

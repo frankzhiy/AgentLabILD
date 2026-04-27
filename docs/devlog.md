@@ -300,3 +300,16 @@
 - 变更原因: 在既有 write contracts 与 validation pipeline 之上新增真实 write gate 路径：`candidate -> validation pipeline -> WriteDecision -> optional sink persistence`；并通过 `StateSink` 抽象提供 `NoOpStateSink`/`InMemoryStateSink`，确保仅在 `should_persist=True` 且存在 `accepted_envelope` 时持久化；保持非修复式、非事件源、非数据库集成的 Phase 1-3 边界。
 - 验证方式: `python -m pytest -q tests/test_state_writer.py tests/test_write_contracts.py tests/test_validation_pipeline.py tests/test_skeleton_imports.py`（30 passed）。
 
+- 任务: Phase 1-3 Issue 5 refinement（write-gate 语义收紧）
+- 变更文件:
+	- src/state/write_policy.py
+	- src/state/write_decision.py
+	- src/state/state_writer.py
+	- src/state/sinks.py
+	- tests/test_write_contracts.py
+	- tests/test_state_writer.py
+	- docs/devlog.md
+	- teach/phase1_3_write_gate_semantic_tightening_2026_04_27.md
+- 变更原因: 将 write-gate 进一步收敛为保守权威语义：manual_review 永不持久化；`accepted_envelope` 仅允许在 `ACCEPTED` 决策中存在；保持 sink 持久化异常向上抛出；并明确 `WriteDecision` 表达的是 validation-gate 判定结果而非持久化成功保证；同时澄清 `NoOpStateSink` 为“接收 persist 调用后丢弃状态”。
+- 验证方式: `python -m pytest -q tests/test_write_contracts.py tests/test_state_writer.py tests/test_validation_pipeline.py tests/test_skeleton_imports.py`。
+

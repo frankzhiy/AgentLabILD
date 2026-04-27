@@ -20,7 +20,7 @@ class StateSink(Protocol):
 
 
 class NoOpStateSink:
-    """Sink implementation that intentionally performs no persistence."""
+    """Sink that receives persist calls but intentionally discards all state."""
 
     def __init__(self) -> None:
         self._persist_call_count = 0
@@ -32,11 +32,12 @@ class NoOpStateSink:
         return self._persist_call_count
 
     def persist(self, envelope: Phase1StateEnvelope) -> None:
+        # Count the call for observability, but intentionally discard the envelope.
         del envelope
         self._persist_call_count += 1
 
     def list_state_ids(self) -> tuple[str, ...]:
-        """Expose an empty view for test-friendly observability."""
+        """Always return empty ids because no state is retained."""
 
         return ()
 

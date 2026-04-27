@@ -3,7 +3,7 @@
 The writer stays intentionally thin:
 1. run validation pipeline,
 2. derive write decision,
-3. optionally persist accepted/manual-review envelope via sink policy.
+3. optionally persist accepted envelope via sink policy.
 
 No event sourcing, repair, replay, or storage integration is implemented here.
 """
@@ -35,7 +35,11 @@ def attempt_phase1_write(
     Behavior:
     1. Always run validation pipeline first.
     2. Derive status from pipeline reports.
-    3. Persist only when WriteDecision resolves should_persist=True.
+    3. Persist only accepted decisions when WriteDecision resolves should_persist=True.
+
+    Note:
+    - WriteDecision describes validation-gate outcome only.
+    - Persistence exceptions are intentionally not swallowed and bubble up.
     """
 
     resolved_policy = policy if policy is not None else WritePolicy()
@@ -63,6 +67,7 @@ def attempt_phase1_write(
     )
 
     if decision.should_persist and decision.accepted_envelope is not None:
+        # Keep persistence failure behavior explicit: sink exceptions bubble to caller.
         resolved_sink.persist(decision.accepted_envelope)
 
     return decision
@@ -85,7 +90,7 @@ def _derive_accepted_envelope(
     *,
     status: WriteDecisionStatus,
 ) -> Phase1StateEnvelope | None:
-    if status is WriteDecisionStatus.REJECTED:
+    if status is not WriteDecisionStatus.ACCEPTED:
         return None
 
     return pipeline_result.candidate_envelope

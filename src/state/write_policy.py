@@ -5,6 +5,8 @@
 
 from __future__ import annotations
 
+from typing import Literal
+
 from pydantic import BaseModel, ConfigDict
 
 from .write_status import WriteDecisionStatus
@@ -15,13 +17,14 @@ class WritePolicy(BaseModel):
 
     Phase 1-3 约束：
     1. blocking issue 永远阻断持久化。
-    2. accepted 默认可持久化。
-    3. manual_review 默认不可持久化，需显式策略放开。
+    2. 仅 accepted 可持久化。
+    3. manual_review 在 Phase 1-3 始终不可持久化。
     """
 
     model_config = ConfigDict(extra="forbid", frozen=True)
 
-    allow_manual_review_persist: bool = False
+    # 保留字段仅为兼容旧调用；语义冻结为 False，禁止开启手工复核落库。
+    allow_manual_review_persist: Literal[False] = False
 
     def should_persist(
         self,
@@ -38,7 +41,7 @@ class WritePolicy(BaseModel):
             return True
 
         if status == WriteDecisionStatus.MANUAL_REVIEW:
-            return self.allow_manual_review_persist
+            return False
 
         return False
 
