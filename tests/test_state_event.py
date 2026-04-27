@@ -20,6 +20,7 @@ def _base_payload() -> dict[str, object]:
         "parent_state_id": None,
         "state_version": 1,
         "source_doc_ids": ("doc-001",),
+        "input_event_ids": (),
         "created_at": datetime(2026, 4, 27, 18, 0, 0),
         "created_by": "phase1_state_writer",
         "non_authoritative_note": None,
@@ -74,6 +75,29 @@ def test_state_event_rejects_parent_state_id_equal_to_state_id() -> None:
         StateEvent(**payload)
 
 
+def test_state_event_rejects_duplicate_input_event_ids() -> None:
+    payload = _base_payload()
+    payload["input_event_ids"] = ("input_event-0001", "input_event-0001")
+
+    with pytest.raises(ValidationError):
+        StateEvent(**payload)
+
+
+def test_state_event_rejects_malformed_input_event_id() -> None:
+    payload = _base_payload()
+    payload["input_event_ids"] = ("event-0001",)
+
+    with pytest.raises(ValidationError):
+        StateEvent(**payload)
+
+
+def test_state_event_is_frozen() -> None:
+    event = StateEvent(**_base_payload())
+
+    with pytest.raises((TypeError, ValidationError)):
+        event.created_by = "mutated"
+
+
 def test_free_text_submission_is_one_source_document_event_not_stage_split() -> None:
     payload = _base_payload()
     payload["event_type"] = StateEventType.SOURCE_DOCUMENT_RECEIVED
@@ -81,6 +105,7 @@ def test_free_text_submission_is_one_source_document_event_not_stage_split() -> 
     payload["state_version"] = None
     payload["stage_id"] = None
     payload["source_doc_ids"] = ("doc-raw-001",)
+    payload["input_event_ids"] = ("input_event-0001",)
     payload["non_authoritative_note"] = (
         "原文包含 8 years ago、2 months ago、2024-06-11 CT 等时间线片段，但仍是一次输入事件"
     )
@@ -91,4 +116,5 @@ def test_free_text_submission_is_one_source_document_event_not_stage_split() -> 
     assert event.event_type is StateEventType.SOURCE_DOCUMENT_RECEIVED
     assert event.stage_id is None
     assert event.source_doc_ids == ("doc-raw-001",)
+    assert event.input_event_ids == ("input_event-0001",)
     assert "stage_contexts" not in dumped

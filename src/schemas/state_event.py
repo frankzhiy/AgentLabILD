@@ -20,6 +20,7 @@ from .common import (
     normalize_optional_text,
     validate_id_pattern,
 )
+from .intake import INPUT_EVENT_ID_PATTERN
 
 
 class StateEventType(StrEnum):
@@ -36,7 +37,7 @@ class StateEventType(StrEnum):
 class StateEvent(BaseModel):
     """Append-only state event for traceable state lifecycle."""
 
-    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+    model_config = ConfigDict(extra="forbid", frozen=True, str_strip_whitespace=True)
 
     kind: Literal["state_event"] = "state_event"
     event_id: NonEmptyStr
@@ -47,6 +48,7 @@ class StateEvent(BaseModel):
     parent_state_id: str | None = None
     state_version: int | None = Field(default=None, ge=1)
     source_doc_ids: tuple[NonEmptyStr, ...] = Field(default_factory=tuple)
+    input_event_ids: tuple[NonEmptyStr, ...] = Field(default_factory=tuple)
     created_at: datetime
     created_by: NonEmptyStr
     non_authoritative_note: str | None = None
@@ -138,6 +140,23 @@ class StateEvent(BaseModel):
                 pattern=SOURCE_DOC_ID_PATTERN,
                 field_name="source_doc_ids[]",
                 example="doc_001 or doc-001",
+            )
+
+        return value
+
+    @field_validator("input_event_ids")
+    @classmethod
+    def validate_input_event_ids(cls, value: tuple[str, ...]) -> tuple[str, ...]:
+        duplicates = find_duplicate_items(value)
+        if duplicates:
+            raise ValueError("input_event_ids must not contain duplicates")
+
+        for input_event_id in value:
+            validate_id_pattern(
+                input_event_id,
+                pattern=INPUT_EVENT_ID_PATTERN,
+                field_name="input_event_ids[]",
+                example="input_event_001 or input_event-001",
             )
 
         return value

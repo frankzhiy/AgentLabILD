@@ -5,6 +5,7 @@ from __future__ import annotations
 from datetime import datetime
 
 import pytest
+from pydantic import ValidationError
 
 from src.schemas.state_event import StateEvent, StateEventType
 from src.storage.event_log import InMemoryEventLog
@@ -118,12 +119,17 @@ def test_event_log_stores_and_returns_deep_copies() -> None:
     )
 
     log.append(event)
-    event.created_by = "changed-after-append"
 
     first_read = log.get("event-0001")
     assert first_read is not None
-    first_read.created_by = "changed-after-read"
+
+    with pytest.raises((TypeError, ValidationError)):
+        event.created_by = "changed-after-append"
+
+    with pytest.raises((TypeError, ValidationError)):
+        first_read.created_by = "changed-after-read"
 
     second_read = log.get("event-0001")
     assert second_read is not None
+    assert second_read is not first_read
     assert second_read.created_by == "phase1_state_writer"

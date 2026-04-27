@@ -438,3 +438,20 @@
 	- `python -m pytest -q tests/test_skeleton_imports.py tests/test_state_writer.py tests/test_common_id_patterns.py`（28 passed）
 - 边界说明: 本次未实现诊断、冲突检测、belief revision、仲裁或 safety gate；未引入数据库依赖；未修改 agent prompt 与 pipeline 拓扑；`InMemoryStateStore` 通过 `persist(envelope)` 保持对既有 `StateSink` 协议兼容。
 
+- 任务: Phase 1-5 语义收紧（state versioning/event log + VersionedStateSink）
+- 变更文件:
+	- src/schemas/state_event.py
+	- src/storage/state_store.py
+	- src/storage/versioned_state_sink.py
+	- src/storage/__init__.py
+	- tests/test_state_event.py
+	- tests/test_event_log.py
+	- tests/test_state_store.py
+	- tests/test_versioned_state_sink.py
+	- docs/devlog.md
+	- teach/phase1_5_state_history_semantic_tightening_2026_04_27.md
+- 变更原因: 将 Phase 1-5 从“独立存储类”收紧为可追溯机制层：补齐首版本 parent 约束、强化 `created_from_event` 与 envelope 的 stage/state/parent/version 一致性、限制 `created_from_event.event_type` 为 `state_persisted/snapshot_created`，并新增 `VersionedStateSink` 以把 validator-gated writer 的 `persist` 直接联动到 append-only event log 与 versioned state store。
+- 验证方式:
+	- `python -m pytest -q tests/test_state_event.py tests/test_event_log.py tests/test_state_store.py tests/test_versioned_state_sink.py tests/test_state_writer.py`（37 passed）
+- 边界说明: 本次未实现 event-derived belief revision、冲突检测、仲裁、安全 gate 或数据库持久化；`replay()` 明确为 snapshot-level replay（非事件重建）。
+

@@ -27,6 +27,34 @@ def _build_snapshot(
     return snapshot
 
 
+def _build_created_from_event(
+    *,
+    snapshot: Phase1StateEnvelope,
+    event_id: str,
+    event_type: StateEventType = StateEventType.STATE_PERSISTED,
+    stage_id: str | None = None,
+    parent_state_id: str | None = None,
+) -> StateEvent:
+    resolved_stage_id = stage_id if stage_id is not None else snapshot.stage_context.stage_id
+    resolved_parent_state_id = (
+        parent_state_id if parent_state_id is not None else snapshot.parent_state_id
+    )
+
+    return StateEvent(
+        event_id=event_id,
+        event_type=event_type,
+        case_id=snapshot.case_id,
+        stage_id=resolved_stage_id,
+        state_id=snapshot.state_id,
+        parent_state_id=resolved_parent_state_id,
+        state_version=snapshot.state_version,
+        source_doc_ids=snapshot.stage_context.source_doc_ids,
+        input_event_ids=(),
+        created_at=snapshot.created_at,
+        created_by="phase1_state_writer",
+    )
+
+
 def test_first_state_can_persist_with_version_1_and_no_parent() -> None:
     store = InMemoryStateStore()
     snapshot = _build_snapshot(
@@ -42,6 +70,19 @@ def test_first_state_can_persist_with_version_1_and_no_parent() -> None:
     assert persisted is not None
     assert persisted.state_version == 1
     assert persisted.parent_state_id is None
+
+
+def test_first_state_rejects_parent_state_id_when_set() -> None:
+    store = InMemoryStateStore()
+    snapshot = _build_snapshot(
+        state_id="state-001",
+        state_version=1,
+        parent_state_id="state-000",
+        created_at=datetime(2026, 4, 27, 20, 0, 0),
+    )
+
+    with pytest.raises(ValueError, match="must not define parent_state_id"):
+        store.persist_snapshot(snapshot)
 
 
 def test_second_state_must_reference_previous_state_id() -> None:
@@ -172,7 +213,7 @@ def test_state_store_implements_state_sink_persist_compatibility() -> None:
     assert latest.state_id == "state-001"
 
 
-def test_free_text_submission_uses_source_document_received_event() -> None:
+def test_state_store_accepts_snapshot_created_event_for_created_from_event() -> None:
     store = InMemoryStateStore()
     first = _build_snapshot(
         state_id="state-001",
@@ -180,26 +221,78 @@ def test_free_text_submission_uses_source_document_received_event() -> None:
         parent_state_id=None,
         created_at=datetime(2026, 4, 27, 20, 0, 0),
     )
-    intake_event = StateEvent(
-        event_id="event-raw-0001",
-        event_type=StateEventType.SOURCE_DOCUMENT_RECEIVED,
-        case_id="case-abc",
-        stage_id=None,
-        state_id=None,
-        parent_state_id=None,
-        state_version=None,
-        source_doc_ids=("doc-001",),
-        created_at=datetime(2026, 4, 27, 19, 59, 59),
-        created_by="raw_intake_gate",
-        non_authoritative_note=(
-            "原文中包含 8 years ago / 2 months ago / 2024-06-11 CT，但仍是一次 free-text 提交"
-        ),
+    snapshot_event = _build_created_from_event(
+        snapshot=first,
+        event_id="event-snapshot-0001",
+        event_type=StateEventType.SNAPSHOT_CREATED,
     )
 
-    store.persist_snapshot(first, created_from_event=intake_event)
+    store.persist_snapshot(first, created_from_event=snapshot_event)
     versions = store.list_state_versions("case-abc")
 
-    assert intake_event.event_type is StateEventType.SOURCE_DOCUMENT_RECEIVED
-    assert intake_event.stage_id is None
+    assert snapshot_event.event_type is StateEventType.SNAPSHOT_CREATED
     assert len(versions) == 1
     assert versions[0].stage_context.stage_id == "stage-001"
+
+
+def test_state_store_rejects_created_from_event_stage_id_mismatch() -> None:
+    store = InMemoryStateStore()
+    first = _build_snapshot(
+        state_id="state-001",
+        state_version=1,
+        parent_state_id=None,
+        created_at=datetime(2026, 4, 27, 20, 0, 0),
+    )
+    bad_event = _build_created_from_event(
+        snapshot=first,
+        event_id="event-0001",
+        stage_id="stage-999",
+    )
+
+    with pytest.raises(ValueError, match="created_from_event.stage_id"):
+        store.persist_snapshot(first, created_from_event=bad_event)
+
+
+def test_state_store_rejects_created_from_event_parent_state_id_mismatch() -> None:
+    store = InMemoryStateStore()
+
+    first = _build_snapshot(
+        state_id="state-001",
+        state_version=1,
+        parent_state_id=None,
+        created_at=datetime(2026, 4, 27, 20, 0, 0),
+    )
+    store.persist_snapshot(first)
+
+    second = _build_snapshot(
+        state_id="state-002",
+        state_version=2,
+        parent_state_id="state-001",
+        created_at=datetime(2026, 4, 27, 20, 0, 1),
+    )
+    bad_event = _build_created_from_event(
+        snapshot=second,
+        event_id="event-0002",
+        parent_state_id="state-999",
+    )
+
+    with pytest.raises(ValueError, match="created_from_event.parent_state_id"):
+        store.persist_snapshot(second, created_from_event=bad_event)
+
+
+def test_state_store_rejects_created_from_event_invalid_event_type() -> None:
+    store = InMemoryStateStore()
+    first = _build_snapshot(
+        state_id="state-001",
+        state_version=1,
+        parent_state_id=None,
+        created_at=datetime(2026, 4, 27, 20, 0, 0),
+    )
+    bad_event = _build_created_from_event(
+        snapshot=first,
+        event_id="event-0003",
+        event_type=StateEventType.CANDIDATE_STATE_SUBMITTED,
+    )
+
+    with pytest.raises(ValueError, match="event_type"):
+        store.persist_snapshot(first, created_from_event=bad_event)

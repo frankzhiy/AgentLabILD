@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Protocol, runtime_checkable
 
 from ..schemas.state import Phase1StateEnvelope
-from ..schemas.state_event import StateEvent
+from ..schemas.state_event import StateEvent, StateEventType
 
 
 @runtime_checkable
@@ -33,7 +33,11 @@ class StateStore(Protocol):
         case_id: str,
         until_state_id: str | None = None,
     ) -> Phase1StateEnvelope | None:
-        """Replay snapshots and return latest or one requested state."""
+        """Snapshot-level replay helper.
+
+        This returns already persisted snapshots, not event-derived reconstruction
+        or Phase 4 belief-revision replay.
+        """
 
 
 class InMemoryStateStore:
@@ -57,6 +61,11 @@ class InMemoryStateStore:
             if envelope.state_version != 1:
                 raise ValueError(
                     "the first persisted snapshot for one case must have state_version=1"
+                )
+
+            if envelope.parent_state_id is not None:
+                raise ValueError(
+                    "the first persisted snapshot for one case must not define parent_state_id"
                 )
         else:
             previous = existing_states[-1]
@@ -143,8 +152,24 @@ class InMemoryStateStore:
         envelope: Phase1StateEnvelope,
         created_from_event: StateEvent,
     ) -> None:
+        if created_from_event.event_type not in {
+            StateEventType.STATE_PERSISTED,
+            StateEventType.SNAPSHOT_CREATED,
+        }:
+            raise ValueError(
+                "created_from_event.event_type must be state_persisted or snapshot_created"
+            )
+
         if created_from_event.case_id != envelope.case_id:
             raise ValueError("created_from_event.case_id must equal envelope.case_id")
+
+        if (
+            created_from_event.stage_id is not None
+            and created_from_event.stage_id != envelope.stage_context.stage_id
+        ):
+            raise ValueError(
+                "created_from_event.stage_id must be absent or equal to envelope.stage_context.stage_id"
+            )
 
         if (
             created_from_event.state_id is not None
@@ -152,6 +177,14 @@ class InMemoryStateStore:
         ):
             raise ValueError(
                 "created_from_event.state_id must be absent or equal to envelope.state_id"
+            )
+
+        if (
+            created_from_event.parent_state_id is not None
+            and created_from_event.parent_state_id != envelope.parent_state_id
+        ):
+            raise ValueError(
+                "created_from_event.parent_state_id must be absent or equal to envelope.parent_state_id"
             )
 
         if (
