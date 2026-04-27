@@ -399,3 +399,14 @@
 - 验证方式: `python -m pytest -q tests/test_evidence_atomizer_adapter.py tests/test_evidence_atomization_adapter_contract.py tests/test_case_structurer_adapter.py tests/test_case_structuring_adapter_contract.py`（54 passed）。
 - 边界说明: 本次未实现 LLM client 调用，未实现 source span alignment bridge，未调用 `attempt_phase1_write`，未修改 orchestration 与 experiment YAML。
 
+- 任务: Phase 1-4 Issue 4（adapter validation bridge against SourceDocument registry）
+- 变更文件:
+	- src/adapters/validation_bridge.py
+	- src/adapters/__init__.py
+	- tests/test_adapter_validation_bridge.py
+	- teach/phase1_4_validation_bridge_2026_04_27.md
+	- docs/devlog.md
+- 变更原因: 新增 deterministic adapter validation bridge，在任何下游权威状态构造之前，先检查 `CaseStructuringDraft` / `EvidenceAtomizationDraft` 是否被已登记 `SourceDocument` 集合支持；其中 evidence 侧复用 `validate_evidence_atoms_against_sources` 做 raw_excerpt/source_span grounding，再补充 draft/source_doc_ids 覆盖与 extraction_activity 覆盖检查；组合入口返回统一 `passed/failed/manual_review` 状态与结构化摘要。
+- 验证方式: `python -m pytest -q tests/test_adapter_validation_bridge.py tests/test_case_structurer_adapter.py tests/test_evidence_atomizer_adapter.py tests/test_case_structuring_adapter_contract.py tests/test_evidence_atomization_adapter_contract.py`。
+- 边界说明: 本次桥接层仅做校验报告，不调用 LLM、不调用 `attempt_phase1_write`、不持久化、不创建 `HypothesisState/ClaimReference/ActionCandidate` 或冲突/仲裁/安全决策对象；draft 继续保持 non-authoritative。
+
