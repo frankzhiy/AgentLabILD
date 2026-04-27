@@ -364,3 +364,14 @@
 - 变更原因: 为避免 adapter draft 内部引用歧义，给 `CaseStructuringDraft` 新增集合内唯一性校验，显式拒绝重复 `timeline_item_id` / `finding_id` / `clue_group_id`；并补充对应失败用例。
 - 验证方式: `python -m pytest -q tests/test_case_structuring_adapter_contract.py tests/test_evidence_atomization_adapter_contract.py`。
 
+- 任务: Phase 1-4 Issue 2（Case Structurer adapter implementation）
+- 变更文件:
+	- src/agents/case_structurer.py
+	- configs/prompts/v2/case_structurer.md
+	- tests/test_case_structurer_adapter.py
+	- teach/phase1_4_case_structurer_adapter_2026_04_27.md
+	- docs/devlog.md
+- 变更原因: 在已有 `CaseStructuringDraft` 契约基础上落地 Case Structurer adapter，补齐“提示词构建 + payload 解析 + 边界拦截”最小闭环；确保该组件仅输出 draft，不产出诊断/假设/行动/仲裁字段，并保持不持久化、不调用 write gate。
+- 验证方式: `python -m pytest -q tests/test_case_structurer_adapter.py tests/test_case_structuring_adapter_contract.py`。
+- 边界说明: 本次未修改 orchestration、experiment YAML、validators、state writer、storage；`parse_case_structurer_payload` 不调用 `attempt_phase1_write`，仅返回非权威 `CaseStructurerResult`。
+

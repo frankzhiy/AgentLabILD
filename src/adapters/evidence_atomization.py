@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import re
 from typing import Literal
-
 from pydantic import BaseModel, ConfigDict, field_validator, model_validator
 
 from ..provenance.model import ExtractionActivity
