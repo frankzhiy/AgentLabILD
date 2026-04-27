@@ -229,3 +229,17 @@
 - 变更原因: 启动 Phase 1-3，补齐 validator-gated state write 的核心合同对象，明确 accepted/rejected/manual_review 判定、策略化 should_persist 计算与阻断语义；保持 Direction A 不变（envelope 结构失败仍为硬失败，外部 validator 继续输出 StateValidationReport）。
 - 验证方式: `python -m pytest -q tests/test_write_contracts.py tests/test_phase1_state_envelope.py tests/test_provenance_validator.py`。
 
+# 2026-04-27
+
+- 任务: Phase 1-3 Issue 2（Phase1StateEnvelope schema validator + conservative temporal validator）
+- 变更文件:
+	- src/validators/schema_validator.py
+	- src/validators/temporal_validator.py
+	- src/validators/__init__.py
+	- tests/test_schema_validator.py
+	- tests/test_temporal_validator.py
+	- docs/devlog.md
+	- teach/phase1_3_schema_temporal_validators_2026_04_27.md
+- 变更原因: 将 Phase 1 结构校验能力从模型构造异常外化为可复用 `StateValidationReport` 机制模块，并新增 Phase 1-3 范围内保守时序校验，为后续 write-gate 组合验证做准备；本次不引入 pipeline/writer/event-log/unsupported-claim 逻辑，保持 Direction A 现状。
+- 验证方式: `python -m pytest -q tests/test_schema_validator.py tests/test_temporal_validator.py tests/test_provenance_validator.py`。
+
