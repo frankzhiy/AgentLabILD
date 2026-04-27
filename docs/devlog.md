@@ -313,3 +313,22 @@
 - 变更原因: 将 write-gate 进一步收敛为保守权威语义：manual_review 永不持久化；`accepted_envelope` 仅允许在 `ACCEPTED` 决策中存在；保持 sink 持久化异常向上抛出；并明确 `WriteDecision` 表达的是 validation-gate 判定结果而非持久化成功保证；同时澄清 `NoOpStateSink` 为“接收 persist 调用后丢弃状态”。
 - 验证方式: `python -m pytest -q tests/test_write_contracts.py tests/test_state_writer.py tests/test_validation_pipeline.py tests/test_skeleton_imports.py`。
 
+- 任务: Phase 1 raw-text intake layer（RawInputEvent / SourceDocument / source-evidence alignment）
+- 变更文件:
+	- src/schemas/intake.py
+	- src/schemas/__init__.py
+	- src/intake/__init__.py
+	- src/intake/registry.py
+	- src/intake/validators.py
+	- src/intake/intake_gate.py
+	- src/validators/provenance_validator.py
+	- src/validators/__init__.py
+	- tests/test_intake_schemas.py
+	- tests/test_intake_gate.py
+	- tests/test_source_document_evidence_alignment.py
+	- teach/phase1_raw_text_intake_layer_2026_04_27.md
+	- docs/devlog.md
+- 变更原因: 在 authoritative Phase1StateEnvelope 写入前新增显式 raw intake 层，将外部自由文本先登记为 RawInputEvent，再固化为可引用 SourceDocument，并提供 source/evidence 对齐桥接校验，阻断 raw free-text 直接写入权威状态；同时明确“输入事件 != 临床阶段”，append/correction/replacement 不自动等于新 StageContext。
+- 验证方式: `python -m pytest -q tests/test_intake_schemas.py tests/test_intake_gate.py tests/test_source_document_evidence_alignment.py`。
+- 边界说明: 本次未重写 `Phase1StateEnvelope`，未改写 `attempt_phase1_write` 行为，仅新增前置 intake 与桥接校验能力。
+

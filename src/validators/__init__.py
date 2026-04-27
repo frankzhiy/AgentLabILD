@@ -3,8 +3,11 @@
 from .provenance_validator import (
     DEFAULT_VALIDATOR_NAME,
     DEFAULT_VALIDATOR_VERSION,
+    SOURCE_ALIGNMENT_VALIDATOR_NAME,
+    SOURCE_ALIGNMENT_VALIDATOR_VERSION,
     build_provenance_validation_issues,
     convert_provenance_issues_to_validation_issues,
+    validate_evidence_atoms_against_sources,
     validate_phase1_provenance,
 )
 from .pipeline import (
@@ -39,6 +42,8 @@ __all__ = [
     "DEFAULT_VALIDATOR_VERSION",
     "FULL_VALIDATOR_EXECUTION_ORDER",
     "Phase1ValidationPipelineResult",
+    "SOURCE_ALIGNMENT_VALIDATOR_NAME",
+    "SOURCE_ALIGNMENT_VALIDATOR_VERSION",
     "SCHEMA_VALIDATOR_NAME",
     "SCHEMA_VALIDATOR_VERSION",
     "SCHEMA_ONLY_EXECUTION_ORDER",
@@ -53,6 +58,7 @@ __all__ = [
     "VALIDATOR_STAGE_UNSUPPORTED_CLAIM",
     "build_provenance_validation_issues",
     "convert_provenance_issues_to_validation_issues",
+    "validate_evidence_atoms_against_sources",
     "validate_phase1_candidate_pipeline",
     "validate_phase1_schema",
     "validate_phase1_temporal",

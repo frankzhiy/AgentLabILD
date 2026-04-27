@@ -14,6 +14,7 @@ MODULES = [
     "src.evaluation",
     "src.llm",
     "src.pipeline",
+    "src.intake",
     "src.schemas",
     "src.schemas.state",
     "src.tracing",
