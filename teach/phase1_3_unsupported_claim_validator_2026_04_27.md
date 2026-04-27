@@ -23,6 +23,11 @@
   - 新增常量：
     - `UNSUPPORTED_CLAIM_VALIDATOR_NAME`
     - `UNSUPPORTED_CLAIM_VALIDATOR_VERSION`
+  - 明确定位：该 validator 是 claim-level review lens，不替代 envelope closure。
+  - 保留 `invalid_target_binding` 与 `missing_evidence_reference` 的 claim 命名空间解释（可与 closure 规则部分重叠）。
+  - 将 evidence 可用性检查拆成 policy hook（当前默认 strict）：
+    - `strict_current_stage_only`
+    - `allow_historical_authoritative_evidence`（为后续阶段预留）
   - 实现 v1 规则：
     1. `unsupported_claim.missing_evidence_reference`（blocking）
     2. `unsupported_claim.unusable_evidence_reference`（blocking）
@@ -59,12 +64,15 @@
    - hypothesis/action id 集合
    - 当前 stage_id 与可见 source_doc_id 集合
 3. 对每个 ClaimReference 执行规则：
-   - target 是否能绑定到现有对象
-   - evidence_ids 是否存在缺失
+  - target 是否能绑定到现有对象（claim-namespace 审阅视角）
+  - evidence_ids 是否存在缺失（claim-namespace 审阅视角）
    - 已存在 evidence 中是否至少有一条“当前可用”
    - 若 claim 为 strong，且可用证据全部弱/不确定/reported，则给 warning
-4. 把 issue 组装为 `ValidationIssue`（含 target_kind/field_path/related_ids/blocking）。
-5. 汇总生成 `StateValidationReport`：
+4. evidence 可用性判定走 policy hook：
+  - 当前默认 `strict_current_stage_only`
+  - 预留 `allow_historical_authoritative_evidence` 以支持未来历史权威证据视图
+5. 把 issue 组装为 `ValidationIssue`（含 target_kind/field_path/related_ids/blocking）。
+6. 汇总生成 `StateValidationReport`：
    - `has_blocking_issue = any(issue.blocking)`
    - `is_valid = not has_blocking_issue`
 
@@ -75,8 +83,9 @@
 1. 新增规则时优先加独立 helper，不要把判断塞进主循环。
 2. 保持 `unsupported_claim.*` 命名空间稳定，避免与 `schema.* / provenance.* / temporal.*` 混淆。
 3. 若要收紧“evidence 可用性”标准，只使用 envelope 内已有结构字段（stage/source_doc/provenance 结构），不要引入语义推理。
-4. 若要调整 overstated 规则阈值，优先修改 `_is_weak_or_uncertain_evidence`，并同步更新测试。
-5. 每次规则变更都新增对应 failure/warning 测试，避免回归成隐式行为。
+4. 若要切换历史证据可用策略，优先调整 evidence usability policy hook，不要在主循环写死分支。
+5. 若要调整 overstated 规则阈值，优先修改 `_is_weak_or_uncertain_evidence`，并同步更新测试。
+6. 每次规则变更都新增对应 failure/warning 测试，避免回归成隐式行为。
 
 ## 6. Validation method
 
@@ -103,6 +112,7 @@ python -m pytest -q tests/test_unsupported_claims.py tests/test_schema_validator
 
 - unsupported-claim validator 是外部机制层，必须 deterministic、auditable、non-mutation。
 - 本次实现不做医学真值判断，不做 NLI，不做 guideline 推理。
+- `invalid_target_binding` 与 `missing_evidence_reference` 可能和 envelope closure 局部重叠；本模块保留它们是为了 claim namespace 下的可审阅解释，不是替代 closure。
 
 合理推断：
 

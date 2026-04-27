@@ -2,11 +2,18 @@
 
 This module only performs structural, state-internal checks on ClaimReference
 objects in a fully constructed Phase1StateEnvelope.
+
+Design boundary:
+1. This validator is a claim-level review lens over already structured state.
+2. It does not replace Phase1StateEnvelope hard closure validation.
+3. Some issue codes may partially overlap closure checks, but they are kept
+    under unsupported_claim.* for claim-namespace auditability.
 """
 
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Literal
 
 from ..schemas.claim import ClaimReference, ClaimStrength, ClaimTargetKind
 from ..schemas.evidence import EvidenceAtom, EvidenceCertainty, EvidencePolarity
@@ -22,6 +29,20 @@ from ..utils.time import utc_now
 UNSUPPORTED_CLAIM_VALIDATOR_NAME = "phase1_unsupported_claim_validator"
 UNSUPPORTED_CLAIM_VALIDATOR_VERSION = "1.3.0"
 
+EVIDENCE_USABILITY_POLICY_STRICT_CURRENT_STAGE_ONLY = "strict_current_stage_only"
+EVIDENCE_USABILITY_POLICY_ALLOW_HISTORICAL_AUTHORITATIVE_EVIDENCE = (
+    "allow_historical_authoritative_evidence"
+)
+
+EvidenceUsabilityPolicy = Literal[
+    "strict_current_stage_only",
+    "allow_historical_authoritative_evidence",
+]
+
+_DEFAULT_EVIDENCE_USABILITY_POLICY: EvidenceUsabilityPolicy = (
+    EVIDENCE_USABILITY_POLICY_STRICT_CURRENT_STAGE_ONLY
+)
+
 
 def validate_phase1_unsupported_claims(
     envelope: Phase1StateEnvelope,
@@ -31,9 +52,19 @@ def validate_phase1_unsupported_claims(
     validator_name: str = UNSUPPORTED_CLAIM_VALIDATOR_NAME,
     validator_version: str = UNSUPPORTED_CLAIM_VALIDATOR_VERSION,
 ) -> StateValidationReport:
-    """Validate unsupported-claim risks from current authoritative envelope state."""
+    """Validate unsupported-claim risks from current authoritative envelope state.
 
-    issues = _collect_unsupported_claim_issues(envelope)
+    Notes:
+    1. This is a conservative claim-level lens, not an envelope closure checker.
+    2. `unsupported_claim.invalid_target_binding` and
+       `unsupported_claim.missing_evidence_reference` can overlap with envelope
+       hard validation by design, but are retained for claim-namespace review.
+    """
+
+    issues = _collect_unsupported_claim_issues(
+        envelope,
+        evidence_usability_policy=_DEFAULT_EVIDENCE_USABILITY_POLICY,
+    )
     has_blocking_issue = any(issue.blocking for issue in issues)
 
     if generated_at is None:
@@ -70,6 +101,8 @@ def validate_phase1_unsupported_claims(
 
 def _collect_unsupported_claim_issues(
     envelope: Phase1StateEnvelope,
+    *,
+    evidence_usability_policy: EvidenceUsabilityPolicy,
 ) -> tuple[ValidationIssue, ...]:
     issues: list[ValidationIssue] = []
 
@@ -136,6 +169,7 @@ def _collect_unsupported_claim_issues(
                 evidence_by_id[evidence_id],
                 stage_id=stage_id,
                 visible_source_doc_ids=visible_source_doc_ids,
+                policy=evidence_usability_policy,
             )
         )
 
@@ -220,6 +254,30 @@ def _is_evidence_usable_in_current_state(
     *,
     stage_id: str,
     visible_source_doc_ids: set[str],
+    policy: EvidenceUsabilityPolicy,
+) -> bool:
+    if policy == EVIDENCE_USABILITY_POLICY_STRICT_CURRENT_STAGE_ONLY:
+        return _is_evidence_usable_strict_current_stage(
+            evidence,
+            stage_id=stage_id,
+            visible_source_doc_ids=visible_source_doc_ids,
+        )
+
+    if policy == EVIDENCE_USABILITY_POLICY_ALLOW_HISTORICAL_AUTHORITATIVE_EVIDENCE:
+        return _is_evidence_usable_allow_historical_authoritative(
+            evidence,
+            stage_id=stage_id,
+            visible_source_doc_ids=visible_source_doc_ids,
+        )
+
+    return False
+
+
+def _is_evidence_usable_strict_current_stage(
+    evidence: EvidenceAtom,
+    *,
+    stage_id: str,
+    visible_source_doc_ids: set[str],
 ) -> bool:
     if evidence.stage_id != stage_id:
         return False
@@ -249,6 +307,50 @@ def _is_evidence_usable_in_current_state(
 
     input_doc_ids = set(provenance.extraction_activity.input_source_doc_ids)
     if not (input_doc_ids & visible_source_doc_ids):
+        return False
+
+    return True
+
+
+def _is_evidence_usable_allow_historical_authoritative(
+    evidence: EvidenceAtom,
+    *,
+    stage_id: str,
+    visible_source_doc_ids: set[str],
+) -> bool:
+    # Keep current-stage behavior strict; only historical evidence gets a
+    # dedicated authority-path that can be expanded in later phases.
+    if evidence.stage_id == stage_id:
+        return _is_evidence_usable_strict_current_stage(
+            evidence,
+            stage_id=stage_id,
+            visible_source_doc_ids=visible_source_doc_ids,
+        )
+
+    # Fast path: when historical evidence source is still visible in this stage,
+    # it is directly usable without requiring stricter historical checks.
+    if visible_source_doc_ids and evidence.source_doc_id in visible_source_doc_ids:
+        return True
+
+    provenance = evidence.provenance
+    if provenance is None:
+        return False
+
+    if provenance.evidence_id != evidence.evidence_id:
+        return False
+
+    if provenance.stage_id != evidence.stage_id:
+        return False
+
+    if not provenance.source_anchors:
+        return False
+
+    if any(anchor.stage_id != provenance.stage_id for anchor in provenance.source_anchors):
+        return False
+
+    anchor_doc_ids = {anchor.source_doc_id for anchor in provenance.source_anchors}
+    input_doc_ids = set(provenance.extraction_activity.input_source_doc_ids)
+    if not anchor_doc_ids.issubset(input_doc_ids):
         return False
 
     return True
