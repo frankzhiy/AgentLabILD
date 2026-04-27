@@ -103,3 +103,4 @@ python -m pytest -q tests/test_case_structuring_adapter_contract.py tests/test_e
 3. Case Structurer 只能做结构化整理，不能产出 final diagnosis。
 4. Evidence Atomizer 只能做证据原子抽取，不能综合生成 hypotheses。
 5. 既有 validators 与 state writer gate 仍是唯一权威写入边界。
+6. `CandidateClueGroup.finding_ids` 当前允许为空，仅作为 draft 级兼容选择；后续接入真实 Case Structurer 输出时可再收紧。

@@ -355,3 +355,12 @@
 - 验证方式: `python -m pytest -q tests/test_case_structuring_adapter_contract.py tests/test_evidence_atomization_adapter_contract.py`。
 - 边界说明: 本次未修改 orchestration、experiment YAML、既有 validators、Phase1StateEnvelope、state writer/storage。
 
+- 任务: Phase 1-4 Issue 1 refinement（CaseStructuringDraft duplicate-id hardening）
+- 变更文件:
+	- src/adapters/case_structuring.py
+	- tests/test_case_structuring_adapter_contract.py
+	- teach/phase1_4_adapter_contracts_2026_04_27.md
+	- docs/devlog.md
+- 变更原因: 为避免 adapter draft 内部引用歧义，给 `CaseStructuringDraft` 新增集合内唯一性校验，显式拒绝重复 `timeline_item_id` / `finding_id` / `clue_group_id`；并补充对应失败用例。
+- 验证方式: `python -m pytest -q tests/test_case_structuring_adapter_contract.py tests/test_evidence_atomization_adapter_contract.py`。
+

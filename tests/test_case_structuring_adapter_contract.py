@@ -78,6 +78,59 @@ def test_case_structuring_draft_rejects_duplicate_source_doc_ids() -> None:
         CaseStructuringDraft(**payload)
 
 
+def test_case_structuring_draft_rejects_duplicate_timeline_item_ids() -> None:
+    payload = _base_case_structuring_payload()
+    payload["timeline_items"] = (
+        payload["timeline_items"][0],
+        {
+            "timeline_item_id": "timeline_item-001",
+            "stage_id": "stage-001",
+            "source_doc_id": "doc-002",
+            "event_type": "follow_up",
+            "event_time_text": "last month",
+            "description": "Follow-up visit documented persistent cough.",
+        },
+    )
+
+    with pytest.raises(ValidationError):
+        CaseStructuringDraft(**payload)
+
+
+def test_case_structuring_draft_rejects_duplicate_finding_ids() -> None:
+    payload = _base_case_structuring_payload()
+    payload["normalized_findings"] = (
+        payload["normalized_findings"][0],
+        {
+            "finding_id": "finding-001",
+            "stage_id": "stage-001",
+            "source_doc_id": "doc-001",
+            "finding_key": "RF Positive",
+            "finding_text": "Rheumatoid factor is positive.",
+            "modality": InfoModality.SEROLOGY,
+        },
+    )
+
+    with pytest.raises(ValidationError):
+        CaseStructuringDraft(**payload)
+
+
+def test_case_structuring_draft_rejects_duplicate_clue_group_ids() -> None:
+    payload = _base_case_structuring_payload()
+    payload["candidate_clue_groups"] = (
+        payload["candidate_clue_groups"][0],
+        {
+            "clue_group_id": "clue_group-001",
+            "stage_id": "stage-001",
+            "group_key": "other_clues",
+            "finding_ids": (),
+            "summary": "Other non-diagnostic clues.",
+        },
+    )
+
+    with pytest.raises(ValidationError):
+        CaseStructuringDraft(**payload)
+
+
 def test_case_structuring_draft_rejects_case_id_mismatch() -> None:
     payload = _base_case_structuring_payload()
     payload["case_id"] = "case-999"

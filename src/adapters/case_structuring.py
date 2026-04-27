@@ -341,6 +341,30 @@ class CaseStructuringDraft(BaseModel):
         if stage_context.case_id != self.case_id:
             raise ValueError("proposed_stage_context.case_id must equal draft case_id")
 
+        duplicate_timeline_item_ids = find_duplicate_items(
+            timeline_item.timeline_item_id for timeline_item in self.timeline_items
+        )
+        if duplicate_timeline_item_ids:
+            raise ValueError(
+                "timeline_items must not contain duplicate timeline_item_id values"
+            )
+
+        duplicate_finding_ids = find_duplicate_items(
+            finding.finding_id for finding in self.normalized_findings
+        )
+        if duplicate_finding_ids:
+            raise ValueError(
+                "normalized_findings must not contain duplicate finding_id values"
+            )
+
+        duplicate_clue_group_ids = find_duplicate_items(
+            clue_group.clue_group_id for clue_group in self.candidate_clue_groups
+        )
+        if duplicate_clue_group_ids:
+            raise ValueError(
+                "candidate_clue_groups must not contain duplicate clue_group_id values"
+            )
+
         draft_source_doc_ids = set(self.source_doc_ids)
         stage_source_doc_ids = set(stage_context.source_doc_ids)
         if not stage_source_doc_ids.issubset(draft_source_doc_ids):
