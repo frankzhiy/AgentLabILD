@@ -16,6 +16,7 @@ NonEmptyStr = Annotated[str, Field(min_length=1)]
 CASE_ID_PATTERN = re.compile(r"^case[_-][A-Za-z0-9][A-Za-z0-9_-]*$")
 STAGE_ID_PATTERN = re.compile(r"^stage[_-][A-Za-z0-9][A-Za-z0-9_-]*$")
 SOURCE_DOC_ID_PATTERN = re.compile(r"^doc[_-][A-Za-z0-9][A-Za-z0-9_-]*$")
+EVENT_ID_PATTERN = re.compile(r"^event[_-][A-Za-z0-9][A-Za-z0-9_-]*$")
 EVIDENCE_ID_PATTERN = re.compile(r"^(ev|evd)[_-][A-Za-z0-9][A-Za-z0-9_-]*$")
 CLAIM_REF_ID_PATTERN = re.compile(r"^claim_ref[_-][A-Za-z0-9][A-Za-z0-9_-]*$")
 HYPOTHESIS_ID_PATTERN = re.compile(r"^hyp(?:othesis)?[_-][A-Za-z0-9][A-Za-z0-9_-]*$")
@@ -80,6 +81,7 @@ __all__ = [
 	"CASE_ID_PATTERN",
 	"CLAIM_REF_ID_PATTERN",
 	"EVIDENCE_ID_PATTERN",
+	"EVENT_ID_PATTERN",
 	"HYPOTHESIS_ID_PATTERN",
 	"ISSUE_ID_PATTERN",
 	"NonEmptyStr",

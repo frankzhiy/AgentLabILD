@@ -419,3 +419,22 @@
 - 验证方式: `python -m pytest -q tests/test_phase1_4_smoke_flow.py`；`python -m pytest -q tests/test_phase1_4_smoke_flow.py tests/test_adapter_validation_bridge.py tests/test_case_structurer_adapter.py tests/test_evidence_atomizer_adapter.py`。
 - 边界说明: 本次仅新增测试与文档，不调用 LLM，不修改 orchestration/experiment YAML，不调用 `attempt_phase1_write`/`StateWriter`，不创建 `HypothesisState`、`ActionCandidate`、冲突、仲裁或最终诊断对象。
 
+- 任务: Phase 1-5（stage-aware state versioning + append-only event log）
+- 变更文件:
+	- src/schemas/common.py
+	- src/schemas/state_event.py
+	- src/schemas/__init__.py
+	- src/storage/event_log.py
+	- src/storage/state_store.py
+	- src/storage/__init__.py
+	- tests/test_state_event.py
+	- tests/test_event_log.py
+	- tests/test_state_store.py
+	- teach/phase1_5_state_versioning_event_log.md
+	- docs/devlog.md
+- 变更原因: 在不重构既有 `Phase1StateEnvelope`/validator-gated writer 的前提下，补齐缺失的历史层机制：以 `StateEvent` 记录输入与状态生命周期事件，以 append-only `EventLog` 保证事件不可覆写可排序，以 version-aware `StateStore` 保证 case 内状态快照版本链严格递增并可回放。
+- 验证方式:
+	- `python -m pytest -q tests/test_state_event.py tests/test_event_log.py tests/test_state_store.py`（19 passed）
+	- `python -m pytest -q tests/test_skeleton_imports.py tests/test_state_writer.py tests/test_common_id_patterns.py`（28 passed）
+- 边界说明: 本次未实现诊断、冲突检测、belief revision、仲裁或 safety gate；未引入数据库依赖；未修改 agent prompt 与 pipeline 拓扑；`InMemoryStateStore` 通过 `persist(envelope)` 保持对既有 `StateSink` 协议兼容。
+
