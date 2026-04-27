@@ -410,3 +410,12 @@
 - 验证方式: `python -m pytest -q tests/test_adapter_validation_bridge.py tests/test_case_structurer_adapter.py tests/test_evidence_atomizer_adapter.py tests/test_case_structuring_adapter_contract.py tests/test_evidence_atomization_adapter_contract.py`。
 - 边界说明: 本次桥接层仅做校验报告，不调用 LLM、不调用 `attempt_phase1_write`、不持久化、不创建 `HypothesisState/ClaimReference/ActionCandidate` 或冲突/仲裁/安全决策对象；draft 继续保持 non-authoritative。
 
+- 任务: Phase 1-4 Issue 5（raw intake -> adapter validation bridge smoke flow）
+- 变更文件:
+	- tests/test_phase1_4_smoke_flow.py
+	- teach/phase1_4_smoke_flow_2026_04_27.md
+	- docs/devlog.md
+- 变更原因: 新增最小 deterministic smoke flow，证明已有 intake gate、Case Structurer adapter、Evidence Atomizer adapter、adapter validation bridge 可从一段 raw ILD 文本串联工作；并补充关键负例，确保 forbidden adapter 字段在 bridge 前被拒绝、raw_excerpt grounding 缺口在 bridge 阶段被阻断。
+- 验证方式: `python -m pytest -q tests/test_phase1_4_smoke_flow.py`；`python -m pytest -q tests/test_phase1_4_smoke_flow.py tests/test_adapter_validation_bridge.py tests/test_case_structurer_adapter.py tests/test_evidence_atomizer_adapter.py`。
+- 边界说明: 本次仅新增测试与文档，不调用 LLM，不修改 orchestration/experiment YAML，不调用 `attempt_phase1_write`/`StateWriter`，不创建 `HypothesisState`、`ActionCandidate`、冲突、仲裁或最终诊断对象。
+
