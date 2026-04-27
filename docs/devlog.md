@@ -455,3 +455,22 @@
 	- `python -m pytest -q tests/test_state_event.py tests/test_event_log.py tests/test_state_store.py tests/test_versioned_state_sink.py tests/test_state_writer.py`（37 passed）
 - 边界说明: 本次未实现 event-derived belief revision、冲突检测、仲裁、安全 gate 或数据库持久化；`replay()` 明确为 snapshot-level replay（非事件重建）。
 
+- 任务: Phase 1-6 Issue 1（deterministic fixtures for benchmark hook）
+- 变更文件:
+	- tests/fixtures/phase1/valid_minimal_case.json
+	- tests/fixtures/phase1/valid_multihypothesis_case.json
+	- tests/fixtures/phase1/invalid_missing_evidence_ref.json
+	- tests/fixtures/phase1/invalid_unsupported_claim.json
+	- tests/fixtures/phase1/invalid_stage_mismatch.json
+	- tests/fixtures/phase1/invalid_temporal_order.json
+	- tests/fixtures/phase1/invalid_source_alignment.json
+	- tests/fixtures/phase1/valid_two_stage_version_chain.json
+	- tests/test_phase1_fixtures.py
+	- teach/phase1_6_fixtures.md
+	- docs/devlog.md
+- 变更原因: 为 Phase 1 benchmark hook 提供可复现且可审计的最小夹具集，覆盖 schema/provenance/temporal/unsupported-claim 管线通过路径与关键失败路径，并补充 source alignment 失败夹具，确保后续指标与 runner 接入前有稳定输入边界。
+- 验证方式:
+	- `python -m pytest -q tests/test_phase1_fixtures.py`
+	- `python -m pytest -q`
+- 边界说明: 本次仅新增测试夹具、夹具加载测试与文档；未引入 metrics、runner、report、ablation、新 agent、新 prompt、冲突检测、belief revision、仲裁或 safety gate；未放宽任何 schema/validator 语义以迁就夹具。
+

@@ -1,0 +1,282 @@
+{
+  "states": [
+    {
+      "case_id": "case-chain",
+      "stage_context": {
+        "stage_id": "stage-401",
+        "case_id": "case-chain",
+        "stage_index": 0,
+        "stage_type": "initial_review",
+        "trigger_type": "initial_presentation",
+        "created_at": "2026-04-23T09:00:00",
+        "parent_stage_id": null,
+        "available_modalities": [
+          "hrct_text"
+        ],
+        "source_doc_ids": [
+          "doc-401"
+        ]
+      },
+      "board_init": {
+        "board_id": "board-401",
+        "case_id": "case-chain",
+        "stage_id": "stage-401",
+        "board_status": "initialized",
+        "init_source": "stage_bootstrap",
+        "initialized_at": "2026-04-23T09:00:00",
+        "evidence_ids": [
+          "evd-401"
+        ],
+        "hypothesis_ids": [
+          "hyp-401"
+        ],
+        "action_candidate_ids": [],
+        "ranked_hypothesis_ids": [
+          "hyp-401"
+        ],
+        "parent_board_id": null
+      },
+      "evidence_atoms": [
+        {
+          "evidence_id": "evd-401",
+          "stage_id": "stage-401",
+          "source_doc_id": "doc-401",
+          "atom_index": 0,
+          "category": "imaging_finding",
+          "modality": "hrct_text",
+          "statement": "Subpleural reticulation is present.",
+          "raw_excerpt": "Subpleural reticulation",
+          "polarity": "present",
+          "certainty": "confirmed",
+          "temporality": "current",
+          "subject": "patient",
+          "source_span_start": 0,
+          "source_span_end": 22,
+          "extraction_method": "llm_structured",
+          "provenance": {
+            "evidence_provenance_id": "eprov-401",
+            "stage_id": "stage-401",
+            "evidence_id": "evd-401",
+            "source_anchors": [
+              {
+                "anchor_id": "anchor-401",
+                "stage_id": "stage-401",
+                "source_doc_id": "doc-401",
+                "modality": "hrct_text",
+                "raw_excerpt": "Subpleural reticulation",
+                "span_start": 0,
+                "span_end": 22
+              }
+            ],
+            "extraction_activity": {
+              "activity_id": "activity-401",
+              "stage_id": "stage-401",
+              "extraction_method": "llm_structured",
+              "extractor_name": "evidence_atomizer",
+              "extractor_version": "v1",
+              "occurred_at": "2026-04-23T09:00:00",
+              "input_source_doc_ids": [
+                "doc-401"
+              ]
+            }
+          }
+        }
+      ],
+      "claim_references": [
+        {
+          "claim_ref_id": "claim_ref-401",
+          "stage_id": "stage-401",
+          "target_kind": "hypothesis",
+          "target_id": "hyp-401",
+          "claim_text": "Imaging supports fibrotic ILD hypothesis.",
+          "relation": "supports",
+          "evidence_ids": [
+            "evd-401"
+          ],
+          "provenance": {
+            "claim_provenance_id": "cprov-401",
+            "stage_id": "stage-401",
+            "claim_ref_id": "claim_ref-401",
+            "evidence_ids": [
+              "evd-401"
+            ],
+            "evidence_provenance_ids": [
+              "eprov-401"
+            ],
+            "derivation_activity": {
+              "activity_id": "activity-402",
+              "stage_id": "stage-401",
+              "extraction_method": "llm_structured",
+              "extractor_name": "claim_builder",
+              "extractor_version": "v1",
+              "occurred_at": "2026-04-23T09:00:00",
+              "input_source_doc_ids": [
+                "doc-401"
+              ]
+            }
+          }
+        }
+      ],
+      "hypotheses": [
+        {
+          "hypothesis_id": "hyp-401",
+          "stage_id": "stage-401",
+          "hypothesis_label": "Fibrotic ILD pattern",
+          "status": "under_consideration",
+          "confidence_level": "low",
+          "supporting_claim_ref_ids": [
+            "claim_ref-401"
+          ],
+          "refuting_claim_ref_ids": [],
+          "missing_information_claim_ref_ids": []
+        }
+      ],
+      "action_candidates": [],
+      "validation_report": null,
+      "state_id": "state-401",
+      "state_version": 1,
+      "parent_state_id": null,
+      "created_at": "2026-04-23T09:05:00"
+    },
+    {
+      "case_id": "case-chain",
+      "stage_context": {
+        "stage_id": "stage-402",
+        "case_id": "case-chain",
+        "stage_index": 1,
+        "stage_type": "supplementary_test_review",
+        "trigger_type": "new_pft",
+        "created_at": "2026-04-24T10:00:00",
+        "parent_stage_id": "stage-401",
+        "available_modalities": [
+          "hrct_text",
+          "pft"
+        ],
+        "source_doc_ids": [
+          "doc-401",
+          "doc-402"
+        ]
+      },
+      "board_init": {
+        "board_id": "board-402",
+        "case_id": "case-chain",
+        "stage_id": "stage-402",
+        "board_status": "initialized",
+        "init_source": "parent_board_propagation",
+        "initialized_at": "2026-04-24T10:00:00",
+        "evidence_ids": [
+          "evd-402"
+        ],
+        "hypothesis_ids": [
+          "hyp-402"
+        ],
+        "action_candidate_ids": [],
+        "ranked_hypothesis_ids": [
+          "hyp-402"
+        ],
+        "parent_board_id": "board-401"
+      },
+      "evidence_atoms": [
+        {
+          "evidence_id": "evd-402",
+          "stage_id": "stage-402",
+          "source_doc_id": "doc-402",
+          "atom_index": 0,
+          "category": "pulmonary_function_finding",
+          "modality": "pft",
+          "statement": "DLCO is 48 percent predicted.",
+          "raw_excerpt": "DLCO is 48 percent predicted",
+          "polarity": "present",
+          "certainty": "confirmed",
+          "temporality": "newly_observed",
+          "subject": "patient",
+          "source_span_start": 0,
+          "source_span_end": 27,
+          "extraction_method": "llm_structured",
+          "provenance": {
+            "evidence_provenance_id": "eprov-402",
+            "stage_id": "stage-402",
+            "evidence_id": "evd-402",
+            "source_anchors": [
+              {
+                "anchor_id": "anchor-402",
+                "stage_id": "stage-402",
+                "source_doc_id": "doc-402",
+                "modality": "pft",
+                "raw_excerpt": "DLCO is 48 percent predicted",
+                "span_start": 0,
+                "span_end": 27
+              }
+            ],
+            "extraction_activity": {
+              "activity_id": "activity-403",
+              "stage_id": "stage-402",
+              "extraction_method": "llm_structured",
+              "extractor_name": "evidence_atomizer",
+              "extractor_version": "v1",
+              "occurred_at": "2026-04-24T10:00:00",
+              "input_source_doc_ids": [
+                "doc-402"
+              ]
+            }
+          }
+        }
+      ],
+      "claim_references": [
+        {
+          "claim_ref_id": "claim_ref-402",
+          "stage_id": "stage-402",
+          "target_kind": "hypothesis",
+          "target_id": "hyp-402",
+          "claim_text": "Reduced DLCO supports progression concern.",
+          "relation": "supports",
+          "evidence_ids": [
+            "evd-402"
+          ],
+          "provenance": {
+            "claim_provenance_id": "cprov-402",
+            "stage_id": "stage-402",
+            "claim_ref_id": "claim_ref-402",
+            "evidence_ids": [
+              "evd-402"
+            ],
+            "evidence_provenance_ids": [
+              "eprov-402"
+            ],
+            "derivation_activity": {
+              "activity_id": "activity-404",
+              "stage_id": "stage-402",
+              "extraction_method": "llm_structured",
+              "extractor_name": "claim_builder",
+              "extractor_version": "v1",
+              "occurred_at": "2026-04-24T10:00:00",
+              "input_source_doc_ids": [
+                "doc-402"
+              ]
+            }
+          }
+        }
+      ],
+      "hypotheses": [
+        {
+          "hypothesis_id": "hyp-402",
+          "stage_id": "stage-402",
+          "hypothesis_label": "Progressive fibrotic ILD",
+          "status": "under_consideration",
+          "confidence_level": "moderate",
+          "supporting_claim_ref_ids": [
+            "claim_ref-402"
+          ],
+          "refuting_claim_ref_ids": [],
+          "missing_information_claim_ref_ids": []
+        }
+      ],
+      "action_candidates": [],
+      "validation_report": null,
+      "state_id": "state-402",
+      "state_version": 2,
+      "parent_state_id": "state-401",
+      "created_at": "2026-04-24T10:05:00"
+    }
+  ]
+}

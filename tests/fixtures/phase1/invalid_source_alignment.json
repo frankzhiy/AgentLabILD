@@ -1,0 +1,28 @@
+{
+  "source_documents": [
+    {
+      "source_doc_id": "doc-301",
+      "case_id": "case-src",
+      "input_event_id": "input_event-0301",
+      "document_type": "free_text_case_note",
+      "raw_text": "No definite fibrosis is described in this note.",
+      "created_at": "2026-04-23T10:00:00"
+    }
+  ],
+  "evidence_atoms": [
+    {
+      "evidence_id": "evd-301",
+      "stage_id": "stage-301",
+      "source_doc_id": "doc-301",
+      "atom_index": 0,
+      "category": "symptom",
+      "modality": "history",
+      "statement": "Patient reports chronic dry cough.",
+      "raw_excerpt": "Chronic dry cough for three months",
+      "polarity": "present",
+      "certainty": "reported",
+      "temporality": "current",
+      "subject": "patient"
+    }
+  ]
+}
