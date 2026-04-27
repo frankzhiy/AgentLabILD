@@ -4,9 +4,13 @@ from __future__ import annotations
 
 from datetime import timedelta
 
+from src.schemas.validation import StateValidationReport
+from src.validators.constants import FALLBACK_STATE_ID
 from src.validators.pipeline import (
     FULL_VALIDATOR_EXECUTION_ORDER,
+    Phase1ValidationPipelineResult,
     SCHEMA_ONLY_EXECUTION_ORDER,
+    ValidationPipelinePolicy,
     validate_phase1_candidate_pipeline,
 )
 from src.validators.provenance_validator import DEFAULT_VALIDATOR_NAME
@@ -16,7 +20,10 @@ from src.validators.unsupported_claims import UNSUPPORTED_CLAIM_VALIDATOR_NAME
 from tests.test_provenance_checker import build_valid_envelope
 
 
-def _get_report_by_validator_name(result: object, validator_name: str) -> object:
+def _get_report_by_validator_name(
+    result: Phase1ValidationPipelineResult,
+    validator_name: str,
+) -> StateValidationReport:
     reports = [
         report
         for report in result.reports
@@ -26,12 +33,24 @@ def _get_report_by_validator_name(result: object, validator_name: str) -> object
     return reports[0]
 
 
+def test_pipeline_non_dict_input_returns_schema_only_with_fallback_state_id() -> None:
+    result = validate_phase1_candidate_pipeline("invalid-candidate")  # type: ignore[arg-type]
+
+    assert result.candidate_state_id == FALLBACK_STATE_ID
+    assert result.candidate_envelope is None
+    assert result.validator_execution_order == SCHEMA_ONLY_EXECUTION_ORDER
+    assert len(result.reports) == 1
+    assert result.reports[0].validator_name == SCHEMA_VALIDATOR_NAME
+    assert result.has_blocking_issue is True
+
+
 def test_pipeline_raw_payload_schema_failure_returns_schema_only_report() -> None:
     payload = build_valid_envelope().model_dump(mode="python")
     payload["evidence_atoms"][0]["stage_id"] = "stage-999"
 
     result = validate_phase1_candidate_pipeline(payload)
 
+    assert result.candidate_state_id == "state-001"
     assert result.candidate_envelope is None
     assert result.has_blocking_issue is True
     assert result.validator_execution_order == SCHEMA_ONLY_EXECUTION_ORDER
@@ -40,14 +59,31 @@ def test_pipeline_raw_payload_schema_failure_returns_schema_only_report() -> Non
     assert any(issue.issue_code.startswith("schema.") for issue in result.reports[0].issues)
 
 
+def test_pipeline_schema_failure_preserves_candidate_state_identity() -> None:
+    payload = build_valid_envelope().model_dump(mode="python")
+    payload["state_id"] = "state-777"
+    del payload["stage_context"]
+
+    result = validate_phase1_candidate_pipeline(payload)
+    schema_report = result.reports[0]
+
+    assert result.candidate_state_id == "state-777"
+    assert result.validator_execution_order == SCHEMA_ONLY_EXECUTION_ORDER
+    assert schema_report.report_id == f"report-schema-{result.candidate_state_id}"
+
+
 def test_pipeline_valid_envelope_with_provenance_issue_includes_downstream_reports() -> None:
     envelope = build_valid_envelope()
     envelope.claim_references[0].provenance = None
 
-    result = validate_phase1_candidate_pipeline(envelope, require_provenance=True)
+    result = validate_phase1_candidate_pipeline(
+        envelope,
+        policy=ValidationPipelinePolicy(require_provenance=True),
+    )
 
     provenance_report = _get_report_by_validator_name(result, DEFAULT_VALIDATOR_NAME)
 
+    assert result.candidate_state_id == envelope.state_id
     assert result.candidate_envelope is envelope
     assert result.validator_execution_order == FULL_VALIDATOR_EXECUTION_ORDER
     assert len(result.reports) == 4
@@ -93,8 +129,12 @@ def test_pipeline_valid_envelope_with_unsupported_claim_issue_includes_downstrea
 def test_pipeline_fully_valid_envelope_returns_all_valid_reports() -> None:
     envelope = build_valid_envelope()
 
-    result = validate_phase1_candidate_pipeline(envelope, require_provenance=True)
+    result = validate_phase1_candidate_pipeline(
+        envelope,
+        policy=ValidationPipelinePolicy(require_provenance=True),
+    )
 
+    assert result.candidate_state_id == envelope.state_id
     assert result.validator_execution_order == FULL_VALIDATOR_EXECUTION_ORDER
     assert len(result.reports) == 4
     assert result.has_blocking_issue is False
@@ -118,7 +158,10 @@ def test_pipeline_preserves_report_granularity_and_issue_namespaces() -> None:
     envelope.stage_context.created_at = envelope.created_at + timedelta(seconds=1)
     envelope.claim_references[0].evidence_ids = ("evd-999",)
 
-    result = validate_phase1_candidate_pipeline(envelope, require_provenance=True)
+    result = validate_phase1_candidate_pipeline(
+        envelope,
+        policy=ValidationPipelinePolicy(require_provenance=True),
+    )
 
     schema_report = _get_report_by_validator_name(result, SCHEMA_VALIDATOR_NAME)
     provenance_report = _get_report_by_validator_name(result, DEFAULT_VALIDATOR_NAME)

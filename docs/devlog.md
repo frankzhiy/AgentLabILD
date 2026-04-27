@@ -279,3 +279,13 @@
 - 变更原因: 新增统一 validator 编排层，按固定顺序执行 schema/provenance/temporal/unsupported_claim，并在 schema 失败时短路下游校验；输出结构化 pipeline 结果（candidate_envelope、ordered reports、has_blocking_issue、summary、execution_order）用于后续 state writer 接入，同时明确该模块仅做验证编排，不承担持久化或 accept/reject 写入行为。
 - 验证方式: `python -m pytest -q tests/test_validation_pipeline.py tests/test_schema_validator.py tests/test_provenance_validator.py tests/test_temporal_validator.py tests/test_unsupported_claims.py tests/test_write_contracts.py`（48 passed）。
 
+- 任务: Phase 1-3 Issue 4 refinement（candidate identity + schema-first raw flow + policy hook）
+- 变更文件:
+	- src/validators/pipeline.py
+	- src/validators/__init__.py
+	- tests/test_validation_pipeline.py
+	- teach/phase1_3_validation_pipeline_2026_04_27.md
+	- docs/devlog.md
+- 变更原因: 为对齐下一步 writer 边界，给 pipeline result 增加稳定 `candidate_state_id`（即使 schema-only 分支也可用）；将 raw payload 处理改为 schema-first 路径，消除 schema fail 场景中的重复 envelope 构造；新增 `ValidationPipelinePolicy` 作为策略收敛入口，避免后续继续扩张裸参数签名。
+- 验证方式: `python -m pytest -q tests/test_validation_pipeline.py tests/test_schema_validator.py tests/test_provenance_validator.py tests/test_temporal_validator.py tests/test_unsupported_claims.py tests/test_write_contracts.py`。
+

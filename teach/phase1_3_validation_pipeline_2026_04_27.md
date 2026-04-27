@@ -26,6 +26,7 @@
 
 - src/validators/pipeline.py
   - 新增 `validate_phase1_candidate_pipeline(...)` 入口。
+  - 新增 `ValidationPipelinePolicy`（当前含 `require_provenance`，用于收敛后续策略参数）。
   - 支持输入类型：
     - `dict[str, object]`
     - `Phase1StateEnvelope`
@@ -34,27 +35,37 @@
     2. provenance
     3. temporal
     4. unsupported_claim
-  - 实现 schema 失败短路：raw payload schema 失败时仅返回 schema report，不执行下游。
+  - raw payload 路径改为 schema-first：
+    1. 先调用 schema validator 产出 report
+    2. schema blocking 时短路，仅返回 schema report
+    3. schema 通过后才构造 envelope 并执行下游
   - 新增 `Phase1ValidationPipelineResult`：
+    - `candidate_state_id`
     - `candidate_envelope`
     - `reports`
     - `has_blocking_issue`
     - `validator_execution_order`
     - `summary`
+  - `candidate_state_id` 规则：
+    - envelope 输入：取 `envelope.state_id`
+    - schema-only 分支：沿用 state_id 的 validated/fallback 解析（与 schema validator 一致）
   - 保持 report 粒度：不合并 issue，不改 issue_code namespace。
 
 - src/validators/__init__.py
   - 导出 pipeline 入口、结果对象和执行顺序常量。
 
 - tests/test_validation_pipeline.py
-  - 新增 7 个测试，覆盖：
-    1. raw payload schema 失败仅返回 schema
-    2. provenance 问题场景下游报告保留
-    3. temporal 问题场景下游报告保留
-    4. unsupported-claim 问题场景下游报告保留
-    5. fully valid 场景全报告 valid
-    6. 顺序稳定性断言
-    7. 报告粒度与 namespace 保留断言
+  - 新增/更新测试，覆盖：
+    1. 非 dict / 非 envelope 输入走 schema-only
+    2. raw payload schema 失败仅返回 schema
+    3. schema-only 分支的 candidate_state_id 稳定性
+    4. provenance 问题场景下游报告保留
+    5. temporal 问题场景下游报告保留
+    6. unsupported-claim 问题场景下游报告保留
+    7. fully valid 场景全报告 valid
+    8. 顺序稳定性断言
+    9. 报告粒度与 namespace 保留断言
+    10. policy 对 require_provenance 的路径可用
 
 ## 3. Connection mechanism
 
@@ -73,11 +84,13 @@
 
 1. 输入 candidate（raw payload 或 envelope）。
 2. schema 先执行：
+  - raw payload 先调用 schema validator 产出 report。
   - raw payload schema fail -> 仅产出 schema report 并短路。
-  - raw payload schema pass -> 构造一次 envelope，并将 envelope 传给下游 validator。
+  - raw payload schema pass -> 构造 envelope，并将 envelope 传给下游 validator。
   - envelope 输入 -> 直接走 pass-through schema report 后进入下游。
 3. provenance/temporal/unsupported_claim 按固定顺序执行。
 4. 汇总 `Phase1ValidationPipelineResult`：
+  - 输出稳定 `candidate_state_id`（即使 schema-only 且 envelope=None）
   - 保留每个 validator 的独立 `StateValidationReport`
   - 计算 `has_blocking_issue`
   - 记录 `validator_execution_order`
@@ -89,7 +102,7 @@
 
 1. 若新增 validator，优先在 `src/validators/pipeline.py` 中扩展固定顺序常量和 `_run_full_pipeline`。
 2. 不要在 pipeline 内改写 validator issue；保持各命名空间独立。
-3. 若要切换 provenance 策略（如 `require_provenance`），仅通过 pipeline 参数传递，不在 pipeline 内硬编码分支逻辑。
+3. 若要切换 provenance 策略，优先通过 `ValidationPipelinePolicy` 扩展，不继续堆叠裸布尔参数。
 4. 若未来接入 writer，请在 writer 层消费 `Phase1ValidationPipelineResult`，不要把写入行为回塞到 pipeline。
 5. 若要做 accept/reject/manual_review 计算，应在 write-gate 合同层扩展，而不是在 validator pipeline 里做持久化决策。
 
@@ -110,7 +123,8 @@ python -m pytest -q tests/test_validation_pipeline.py tests/test_schema_validato
 
 1. 如果 `validator_execution_order` 断言失败：检查 pipeline 执行顺序常量与 `_run_full_pipeline` 调用顺序是否一致。
 2. 如果 schema fail 没有短路：检查 raw payload 失败分支是否提前 return。
-3. 如果 envelope 输入报重建/重校验错误：检查 pipeline result 是否保持 envelope pass-through（不做二次构造）。
+3. 如果 schema-only 分支出现 candidate id 丢失：检查 `candidate_state_id` 是否使用 state_id validated/fallback 规则。
+4. 如果 envelope 输入报重建/重校验错误：检查 pipeline result 是否保持 envelope pass-through（不做二次构造）。
 
 ## 7. Concept notes
 
