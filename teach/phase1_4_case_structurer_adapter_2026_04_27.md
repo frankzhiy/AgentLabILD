@@ -1,5 +1,7 @@
 # Phase 1-4 Case Structurer Adapter（2026-04-27）
 
+> 更新：2026-04-27（Issue 2 hardening）
+
 ## 1. Analysis path
 
 本次实现先阅读以下文件，再开始编码：
@@ -29,15 +31,24 @@
 - 新增 `build_case_structurer_prompt`：只拼装 stage metadata + source documents。
 - 新增 `parse_case_structurer_payload`：只解析为 `CaseStructuringDraft`，并做输入对齐与边界拦截。
 - 新增越权字段拦截（如 `final_diagnosis`、`hypotheses`、`action_plan`、`arbitration_output` 等）。
+- Issue 2 hardening：`CaseStructurerInput.source_documents` 在构造期强制非空。
+- Issue 2 hardening：解析阶段新增 `StageContext` 强对齐（`stage_index` / `stage_type` / `trigger_type` / `parent_stage_id`，以及条件字段 `clinical_time` / `stage_label`）。
 
 2. `configs/prompts/v2/case_structurer.md`
 - 新增 v2 提示词契约，明确“Case Structurer 是 adapter，不是 diagnostician”。
 - 明确输出范围、禁止输出范围、溯源要求和输出格式要求。
+- Issue 2 hardening：明确 `previous_stage_summary_non_authoritative` 只能用于阶段连续性，不得用于诊断、假设、治疗、仲裁与安全决策推断。
 
 3. `tests/test_case_structurer_adapter.py`
 - 新增 9 个测试，覆盖 prompt 内容边界、解析成功、解析失败与异常兜底行为。
+- Issue 2 hardening：新增构造期空 source 文档失败测试与 StageContext 对齐失败测试。
+- Issue 2 hardening：新增 previous summary 含诊断字样时 forbidden 字段仍拒绝的回归测试。
 
-4. `docs/devlog.md`
+4. `src/agents/__init__.py`
+- 将旧 skeleton TODO 替换为 adapter-agent 边界说明。
+- 导出 Case Structurer 输入/输出模型与核心函数，供后续集成复用。
+
+5. `docs/devlog.md`
 - 追加本次任务记录、验证命令与边界说明。
 
 ## 3. Connection mechanism
@@ -74,7 +85,7 @@
 3. LLM 返回 payload 后，调用 `parse_case_structurer_payload`：
 - 先做越权字段拦截。
 - 再 `CaseStructuringDraft.model_validate(payload)`。
-- 再做调用上下文对齐校验（case_id、source_doc_ids subset、stage_id）。
+- 再做调用上下文对齐校验（case_id、source_doc_ids subset、stage_id、stage_index、stage_type、trigger_type、parent_stage_id，以及条件字段 clinical_time/stage_label）。
 
 4. 输出 `CaseStructurerResult`：
 - `accepted`：携带 `draft`。
@@ -138,4 +149,5 @@ python -m pytest -q tests/test_case_structurer_adapter.py tests/test_case_struct
 
 4. **previous_stage_summary 的边界**
 - 仅作为 non-authoritative 上下文提示。
-- 不作为诊断依据或系统判决依据。
+- 仅可用于阶段连续性表达。
+- 不作为 diagnosis / differential / hypotheses / treatment / confidence / action / conflict / arbitration / safety decision 的推断依据。

@@ -136,6 +136,9 @@ class CaseStructurerInput(BaseModel):
     def validate_source_document_ids_unique(
         cls, value: tuple[SourceDocument, ...]
     ) -> tuple[SourceDocument, ...]:
+        if not value:
+            raise ValueError("source_documents must not be empty")
+
         duplicate_source_doc_ids = find_duplicate_items(
             source_document.source_doc_id for source_document in value
         )
@@ -314,6 +317,7 @@ def _validate_draft_alignment(
     input: CaseStructurerInput,
 ) -> tuple[str, ...]:
     errors: list[str] = []
+    stage_context = draft.proposed_stage_context
 
     if draft.case_id != input.case_id:
         errors.append("draft.case_id must equal input.case_id")
@@ -327,9 +331,42 @@ def _validate_draft_alignment(
             "draft.source_doc_ids must be a subset of input source document ids"
         )
 
-    if draft.proposed_stage_context.stage_id != input.stage_id:
+    if stage_context.stage_id != input.stage_id:
         errors.append(
             "draft.proposed_stage_context.stage_id must equal input.stage_id"
+        )
+
+    if stage_context.stage_index != input.stage_index:
+        errors.append(
+            "draft.proposed_stage_context.stage_index must equal input.stage_index"
+        )
+
+    if stage_context.stage_type != input.stage_type:
+        errors.append(
+            "draft.proposed_stage_context.stage_type must equal input.stage_type"
+        )
+
+    if stage_context.trigger_type != input.trigger_type:
+        errors.append(
+            "draft.proposed_stage_context.trigger_type must equal input.trigger_type"
+        )
+
+    if stage_context.parent_stage_id != input.parent_stage_id:
+        errors.append(
+            "draft.proposed_stage_context.parent_stage_id must equal input.parent_stage_id"
+        )
+
+    if (
+        input.clinical_time is not None
+        and stage_context.clinical_time != input.clinical_time
+    ):
+        errors.append(
+            "draft.proposed_stage_context.clinical_time must equal input.clinical_time when provided"
+        )
+
+    if input.stage_label is not None and stage_context.stage_label != input.stage_label:
+        errors.append(
+            "draft.proposed_stage_context.stage_label must equal input.stage_label when provided"
         )
 
     return tuple(errors)

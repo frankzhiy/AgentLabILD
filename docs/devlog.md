@@ -375,3 +375,15 @@
 - 验证方式: `python -m pytest -q tests/test_case_structurer_adapter.py tests/test_case_structuring_adapter_contract.py`。
 - 边界说明: 本次未修改 orchestration、experiment YAML、validators、state writer、storage；`parse_case_structurer_payload` 不调用 `attempt_phase1_write`，仅返回非权威 `CaseStructurerResult`。
 
+- 任务: Phase 1-4 Issue 2 hardening（Case Structurer boundary tightening）
+- 变更文件:
+	- src/agents/case_structurer.py
+	- src/agents/__init__.py
+	- configs/prompts/v2/case_structurer.md
+	- tests/test_case_structurer_adapter.py
+	- teach/phase1_4_case_structurer_adapter_2026_04_27.md
+	- docs/devlog.md
+- 变更原因: 在 Issue 2 基础上补齐边界硬化：`CaseStructurerInput.source_documents` 构造期强制非空；解析阶段新增 `StageContext` 元数据强对齐（`stage_index` / `stage_type` / `trigger_type` / `parent_stage_id`，以及条件字段 `clinical_time` / `stage_label`）；并明确 `previous_stage_summary_non_authoritative` 仅用于阶段连续性，不能用于诊断、假设、治疗、仲裁或安全决策推断。
+- 验证方式: `python -m pytest -q tests/test_case_structurer_adapter.py tests/test_case_structuring_adapter_contract.py`。
+- 边界说明: 本次未引入持久化逻辑，未调用 write gate，未修改 orchestration、experiment YAML、validators、state writer、storage。
+

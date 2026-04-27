@@ -4,6 +4,9 @@ from __future__ import annotations
 
 from datetime import datetime
 
+import pytest
+from pydantic import ValidationError
+
 from src.agents.case_structurer import (
     CaseStructurerInput,
     CaseStructurerStatus,
@@ -195,6 +198,83 @@ def test_empty_source_documents_is_rejected() -> None:
     assert any("source_documents" in error for error in result.errors)
 
 
+def test_case_structurer_input_rejects_empty_source_documents_on_construction() -> None:
+    with pytest.raises(ValidationError):
+        CaseStructurerInput(
+            case_id="case-001",
+            source_documents=(),
+            stage_id="stage-001",
+            stage_index=0,
+            stage_type=StageType.INITIAL_REVIEW,
+            trigger_type=TriggerType.INITIAL_PRESENTATION,
+            created_at=datetime(2026, 4, 27, 10, 0, 0),
+        )
+
+
+def test_payload_with_stage_index_mismatch_is_rejected() -> None:
+    payload = _base_payload()
+    payload["proposed_stage_context"]["stage_index"] = 99
+
+    result = parse_case_structurer_payload(payload, _base_input())
+
+    assert result.status is CaseStructurerStatus.REJECTED
+    assert any("stage_index" in error for error in result.errors)
+
+
+def test_payload_with_stage_type_mismatch_is_rejected() -> None:
+    payload = _base_payload()
+    payload["proposed_stage_context"]["stage_type"] = StageType.FOLLOW_UP_REVIEW
+
+    result = parse_case_structurer_payload(payload, _base_input())
+
+    assert result.status is CaseStructurerStatus.REJECTED
+    assert any("stage_type" in error for error in result.errors)
+
+
+def test_payload_with_trigger_type_mismatch_is_rejected() -> None:
+    payload = _base_payload()
+    payload["proposed_stage_context"]["trigger_type"] = TriggerType.CLINICAL_WORSENING
+
+    result = parse_case_structurer_payload(payload, _base_input())
+
+    assert result.status is CaseStructurerStatus.REJECTED
+    assert any("trigger_type" in error for error in result.errors)
+
+
+def test_payload_with_parent_stage_id_mismatch_is_rejected() -> None:
+    input_model = _base_input().model_copy(update={"parent_stage_id": "stage-900"})
+    payload = _base_payload()
+
+    result = parse_case_structurer_payload(payload, input_model)
+
+    assert result.status is CaseStructurerStatus.REJECTED
+    assert any("parent_stage_id" in error for error in result.errors)
+
+
+def test_payload_with_clinical_time_mismatch_is_rejected_when_input_provides_it() -> None:
+    input_model = _base_input().model_copy(
+        update={"clinical_time": datetime(2026, 4, 27, 8, 0, 0)}
+    )
+    payload = _base_payload()
+    payload["proposed_stage_context"]["clinical_time"] = datetime(2026, 4, 27, 8, 30, 0)
+
+    result = parse_case_structurer_payload(payload, input_model)
+
+    assert result.status is CaseStructurerStatus.REJECTED
+    assert any("clinical_time" in error for error in result.errors)
+
+
+def test_payload_with_stage_label_mismatch_is_rejected_when_input_provides_it() -> None:
+    input_model = _base_input().model_copy(update={"stage_label": "Initial Stage"})
+    payload = _base_payload()
+    payload["proposed_stage_context"]["stage_label"] = "Different Label"
+
+    result = parse_case_structurer_payload(payload, input_model)
+
+    assert result.status is CaseStructurerStatus.REJECTED
+    assert any("stage_label" in error for error in result.errors)
+
+
 def test_invalid_payload_returns_structured_errors_without_uncaught_exceptions() -> None:
     invalid_payload = {
         "kind": "case_structuring_draft",
@@ -207,3 +287,20 @@ def test_invalid_payload_returns_structured_errors_without_uncaught_exceptions()
     assert result.draft is None
     assert result.errors
     assert all(isinstance(error, str) for error in result.errors)
+
+
+def test_forbidden_payload_is_rejected_even_with_diagnosis_like_previous_summary() -> None:
+    input_model = _base_input().model_copy(
+        update={
+            "previous_stage_summary": (
+                "Previous non-authoritative note mentioned probable IPF and suggested steroid adjustment."
+            )
+        }
+    )
+    payload = _base_payload()
+    payload["hypotheses"] = ("hyp-001",)
+
+    result = parse_case_structurer_payload(payload, input_model)
+
+    assert result.status is CaseStructurerStatus.REJECTED
+    assert any("hypotheses" in error for error in result.errors)
