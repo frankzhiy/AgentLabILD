@@ -1,4 +1,61 @@
-"""Evaluation package skeleton.
+"""Evaluation package exports."""
 
-TODO: add mechanism-aligned metrics after state contracts stabilize.
-"""
+from .phase1_metrics import (
+	CLAIM_EVIDENCE_TRACEABILITY_RATE,
+	HYPOTHESIS_BOARD_COMPLETENESS_RATE,
+	PROVENANCE_COMPLETENESS_RATE,
+	Phase1MetricSummary,
+	Phase1MetricValue,
+	RERUN_STABILITY_RATE,
+	SCHEMA_VALIDITY_RATE,
+	STAGE_ALIGNMENT_RATE,
+	STATE_VERSION_LINEAGE_VALIDITY_RATE,
+	UNSUPPORTED_CLAIM_RATE,
+	compute_lineage_metric,
+	compute_phase1_metrics,
+	compute_rerun_stability_metric,
+)
+from .phase1_runner import (
+	Phase1BatchEvaluationResult,
+	Phase1CaseEvaluationInput,
+	Phase1CaseEvaluationResult,
+	evaluate_phase1_fixture_dir,
+	evaluate_phase1_payload,
+	evaluate_phase1_payloads,
+	load_phase1_fixture,
+)
+from .reporting import (
+	Phase1AuditReport,
+	build_phase1_audit_report,
+	build_phase1_markdown_summary,
+	phase1_report_to_dict,
+	phase1_report_to_json,
+)
+
+__all__ = [
+	"CLAIM_EVIDENCE_TRACEABILITY_RATE",
+	"HYPOTHESIS_BOARD_COMPLETENESS_RATE",
+	"PROVENANCE_COMPLETENESS_RATE",
+	"Phase1AuditReport",
+	"Phase1BatchEvaluationResult",
+	"Phase1CaseEvaluationInput",
+	"Phase1CaseEvaluationResult",
+	"Phase1MetricSummary",
+	"Phase1MetricValue",
+	"RERUN_STABILITY_RATE",
+	"SCHEMA_VALIDITY_RATE",
+	"STAGE_ALIGNMENT_RATE",
+	"STATE_VERSION_LINEAGE_VALIDITY_RATE",
+	"UNSUPPORTED_CLAIM_RATE",
+	"build_phase1_audit_report",
+	"build_phase1_markdown_summary",
+	"compute_lineage_metric",
+	"compute_phase1_metrics",
+	"compute_rerun_stability_metric",
+	"evaluate_phase1_fixture_dir",
+	"evaluate_phase1_payload",
+	"evaluate_phase1_payloads",
+	"load_phase1_fixture",
+	"phase1_report_to_dict",
+	"phase1_report_to_json",
+]

@@ -474,3 +474,24 @@
 	- `python -m pytest -q`
 - 边界说明: 本次仅新增测试夹具、夹具加载测试与文档；未引入 metrics、runner、report、ablation、新 agent、新 prompt、冲突检测、belief revision、仲裁或 safety gate；未放宽任何 schema/validator 语义以迁就夹具。
 
+- 任务: Phase 1-6 Issue 2-4（deterministic metrics + evaluation runner + audit report output）
+- 变更文件:
+	- src/evaluation/__init__.py
+	- src/evaluation/phase1_metrics.py
+	- src/evaluation/phase1_metrics_support.py
+	- src/evaluation/phase1_runner.py
+	- src/evaluation/reporting.py
+	- tests/test_phase1_metrics.py
+	- tests/test_phase1_runner.py
+	- tests/test_phase1_report.py
+	- teach/phase1_6_evaluation_harness.md
+	- docs/devlog.md
+- 变更原因: 为 Phase 1 state externalization 建立可复现评估层，新增确定性指标、基于既有 validation pipeline 的 runner、以及只消费 runner 输出的审计报告构建能力；目标是验证状态外化机制本身（schema/provenance/traceability/stage/board/lineage/rerun stability），而非诊断准确率。
+- 验证方式:
+	- `python -m pytest -q tests/test_phase1_fixtures.py`
+	- `python -m pytest -q tests/test_phase1_metrics.py`
+	- `python -m pytest -q tests/test_phase1_runner.py`
+	- `python -m pytest -q tests/test_phase1_report.py`
+	- `python -m pytest -q`
+- 边界说明: 本次未新增 agent/prompt，未新增诊断逻辑、临床准确率评分、冲突检测、belief revision、仲裁、安全 gate 或 ablation 开关；validator 语义未改动，既有 validators 继续作为唯一校验真源。
+
