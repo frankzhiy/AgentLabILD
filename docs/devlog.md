@@ -269,3 +269,13 @@
 - 变更原因: 新增独立可执行的 unsupported-claim 机制校验器，在不引入 LLM/NLI/指南推理的前提下，对 claim 的“缺失证据引用、不可用证据引用、target 绑定失效”进行阻断式结构化报告，并对“强 claim 仅由弱/不确定/reported 证据支撑”输出非阻断 warning，满足 Direction A 的可审计与确定性要求；同时明确 `invalid_target_binding`/`missing_evidence_reference` 属于 claim-level review lens（不是 envelope closure 替代），并把 evidence 可用性判定拆为 policy hook（默认 `strict_current_stage_only`，预留历史权威证据模式）。
 - 验证方式: `python -m pytest -q tests/test_unsupported_claims.py tests/test_schema_validator.py tests/test_temporal_validator.py tests/test_provenance_validator.py`。
 
+- 任务: Phase 1-3 Issue 4（unified validation pipeline for Phase1StateEnvelope candidate）
+- 变更文件:
+	- src/validators/pipeline.py
+	- src/validators/__init__.py
+	- tests/test_validation_pipeline.py
+	- docs/devlog.md
+	- teach/phase1_3_validation_pipeline_2026_04_27.md
+- 变更原因: 新增统一 validator 编排层，按固定顺序执行 schema/provenance/temporal/unsupported_claim，并在 schema 失败时短路下游校验；输出结构化 pipeline 结果（candidate_envelope、ordered reports、has_blocking_issue、summary、execution_order）用于后续 state writer 接入，同时明确该模块仅做验证编排，不承担持久化或 accept/reject 写入行为。
+- 验证方式: `python -m pytest -q tests/test_validation_pipeline.py tests/test_schema_validator.py tests/test_provenance_validator.py tests/test_temporal_validator.py tests/test_unsupported_claims.py tests/test_write_contracts.py`（48 passed）。
+
