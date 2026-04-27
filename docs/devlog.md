@@ -387,3 +387,15 @@
 - 验证方式: `python -m pytest -q tests/test_case_structurer_adapter.py tests/test_case_structuring_adapter_contract.py`。
 - 边界说明: 本次未引入持久化逻辑，未调用 write gate，未修改 orchestration、experiment YAML、validators、state writer、storage。
 
+- 任务: Phase 1-4 Issue 3（Evidence Atomizer adapter implementation）
+- 变更文件:
+	- src/agents/evidence_atomizer.py
+	- src/agents/__init__.py
+	- configs/prompts/v2/evidence_atomizer.md
+	- tests/test_evidence_atomizer_adapter.py
+	- teach/phase1_4_evidence_atomizer_adapter_2026_04_27.md
+	- docs/devlog.md
+- 变更原因: 在已有 `EvidenceAtomizationDraft` 契约基础上落地 Evidence Atomizer adapter，补齐“提示词构建 + payload 解析 + 边界拦截”闭环；严格限制其为非权威抽取适配器，仅准备 evidence atomization draft 候选，拒绝诊断/假设/claim/action/conflict/arbitration/safety/belief-revision 相关顶层字段；并确保不持久化、不调用 write gate。
+- 验证方式: `python -m pytest -q tests/test_evidence_atomizer_adapter.py tests/test_evidence_atomization_adapter_contract.py tests/test_case_structurer_adapter.py tests/test_case_structuring_adapter_contract.py`（54 passed）。
+- 边界说明: 本次未实现 LLM client 调用，未实现 source span alignment bridge，未调用 `attempt_phase1_write`，未修改 orchestration 与 experiment YAML。
+
