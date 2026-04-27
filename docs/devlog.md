@@ -342,3 +342,16 @@
 - 变更原因: 修复 `validate_phase1_schema` 对已构造 `Phase1StateEnvelope` 的“直接信任”缺口。由于 Pydantic 默认可变，实例在构造后可被突变，若不重跑 envelope-level model_validator，会让 board/hypothesis/claim 闭包错误绕过 schema gate。此次改为对 envelope 输入执行 `model_dump -> model_validate` 的显式重验，并补充“先构造后突变”回归测试。
 - 验证方式: `python -m pytest -q tests/test_schema_validator.py tests/test_validation_pipeline.py`（20 passed）。
 
+- 任务: Phase 1-4 Issue 1（Case Structurer / Evidence Atomizer adapter contract schemas）
+- 变更文件:
+	- src/adapters/__init__.py
+	- src/adapters/case_structuring.py
+	- src/adapters/evidence_atomization.py
+	- tests/test_case_structuring_adapter_contract.py
+	- tests/test_evidence_atomization_adapter_contract.py
+	- teach/phase1_4_adapter_contracts_2026_04_27.md
+	- docs/devlog.md
+- 变更原因: 新增 Phase 1-4 适配器契约层（仅 draft schema），将 Case Structurer 与 Evidence Atomizer 明确为非权威 adapter：前者只做 case timeline/finding/clue 结构化，后者只做 evidence atomization 草稿封装；同时通过 stage/source/id 一致性与 extra-field 拒绝保证“不能诊断、不能假设综合、不能绕过既有机制边界”。
+- 验证方式: `python -m pytest -q tests/test_case_structuring_adapter_contract.py tests/test_evidence_atomization_adapter_contract.py`。
+- 边界说明: 本次未修改 orchestration、experiment YAML、既有 validators、Phase1StateEnvelope、state writer/storage。
+
