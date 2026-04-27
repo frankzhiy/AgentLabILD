@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import timedelta
+from datetime import datetime, timedelta, timezone
 
 from src.schemas.validation import ValidationTargetKind
 from src.validators.temporal_validator import (
@@ -99,3 +99,12 @@ def test_validate_phase1_temporal_allows_earlier_clinical_time() -> None:
 
     assert report.is_valid is True
     assert report.has_blocking_issue is False
+
+
+def test_validate_phase1_temporal_uses_utc_now_helper(monkeypatch: object) -> None:
+    expected = datetime(2026, 4, 27, 9, 45, 0, tzinfo=timezone.utc)
+    monkeypatch.setattr("src.validators.temporal_validator.utc_now", lambda: expected)
+
+    report = validate_phase1_temporal(build_valid_envelope())
+
+    assert report.generated_at == expected

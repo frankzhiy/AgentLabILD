@@ -16,6 +16,7 @@ from ..schemas.validation import (
     ValidationSeverity,
     ValidationTargetKind,
 )
+from ..utils.time import utc_now
 
 TEMPORAL_VALIDATOR_NAME = "phase1_temporal_validator"
 TEMPORAL_VALIDATOR_VERSION = "1.3.0"
@@ -99,7 +100,7 @@ def validate_phase1_temporal(
     has_blocking_issue = any(issue.blocking for issue in issues)
 
     if generated_at is None:
-        generated_at = datetime.utcnow()
+        generated_at = utc_now()
 
     if report_id is None:
         report_id = f"report-temporal-{envelope.state_id}"

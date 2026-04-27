@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from datetime import datetime, timezone
+
 from src.schemas.validation import ValidationTargetKind
 from src.validators.schema_validator import (
     SCHEMA_VALIDATOR_NAME,
@@ -78,6 +80,22 @@ def test_validate_phase1_schema_reports_model_error_for_envelope_consistency() -
     )
 
 
+def test_validate_phase1_schema_reports_model_error_for_root_object_consistency() -> None:
+    payload = build_valid_envelope().model_dump(mode="python")
+    payload["board_init"]["ranked_hypothesis_ids"] = ["hyp-999"]
+
+    report = validate_phase1_schema(payload)
+
+    assert report.is_valid is False
+    assert report.has_blocking_issue is True
+    assert any(issue.issue_code == "schema.model_error" for issue in report.issues)
+    assert any(issue.field_path == "board_init" for issue in report.issues)
+    assert any(
+        issue.target_kind is ValidationTargetKind.HYPOTHESIS_BOARD_INIT
+        for issue in report.issues
+    )
+
+
 def test_validate_phase1_schema_accepts_preconstructed_envelope() -> None:
     envelope = build_valid_envelope()
 
@@ -88,3 +106,12 @@ def test_validate_phase1_schema_accepts_preconstructed_envelope() -> None:
     assert report.issues == ()
     assert report.case_id == envelope.case_id
     assert report.stage_id == envelope.stage_context.stage_id
+
+
+def test_validate_phase1_schema_uses_utc_now_helper(monkeypatch: object) -> None:
+    expected = datetime(2026, 4, 27, 9, 30, 0, tzinfo=timezone.utc)
+    monkeypatch.setattr("src.validators.schema_validator.utc_now", lambda: expected)
+
+    report = validate_phase1_schema(build_valid_envelope())
+
+    assert report.generated_at == expected

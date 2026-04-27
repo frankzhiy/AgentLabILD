@@ -13,6 +13,7 @@ from datetime import datetime
 from ..provenance.checker import ProvenanceCheckIssue, check_phase1_provenance
 from ..schemas.state import Phase1StateEnvelope
 from ..schemas.validation import StateValidationReport, ValidationIssue
+from ..utils.time import utc_now
 
 DEFAULT_VALIDATOR_NAME = "phase1_provenance_validator"
 DEFAULT_VALIDATOR_VERSION = "1.2.0"
@@ -90,7 +91,7 @@ def validate_phase1_provenance(
         )
 
     if generated_at is None:
-        generated_at = datetime.utcnow()
+        generated_at = utc_now()
 
     if report_id is None:
         report_id = f"report-provenance-{envelope.state_id}"

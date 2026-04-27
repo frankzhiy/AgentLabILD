@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 
 from src.provenance.checker import check_phase1_provenance
 from src.validators.provenance_validator import (
@@ -109,3 +109,12 @@ def test_validate_phase1_provenance_blocks_flat_source_doc_mismatch() -> None:
         and issue.blocking
         for issue in report.issues
     )
+
+
+def test_validate_phase1_provenance_uses_utc_now_helper(monkeypatch: object) -> None:
+    expected = datetime(2026, 4, 27, 10, 0, 0, tzinfo=timezone.utc)
+    monkeypatch.setattr("src.validators.provenance_validator.utc_now", lambda: expected)
+
+    report = validate_phase1_provenance(build_valid_envelope())
+
+    assert report.generated_at == expected

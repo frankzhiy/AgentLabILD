@@ -21,14 +21,16 @@ from ..schemas.validation import (
     ValidationSeverity,
     ValidationTargetKind,
 )
+from ..utils.time import utc_now
+from .constants import (
+    FALLBACK_BOARD_ID,
+    FALLBACK_CASE_ID,
+    FALLBACK_STAGE_ID,
+    FALLBACK_STATE_ID,
+)
 
 SCHEMA_VALIDATOR_NAME = "phase1_schema_validator"
 SCHEMA_VALIDATOR_VERSION = "1.3.0"
-
-_FALLBACK_CASE_ID = "case-unknown"
-_FALLBACK_STAGE_ID = "stage-unknown"
-_FALLBACK_STATE_ID = "state-unknown"
-_FALLBACK_BOARD_TARGET_ID = "board-unknown"
 
 _ROOT_FIELD_TARGET_KIND_MAP: dict[str, ValidationTargetKind] = {
     "stage_context": ValidationTargetKind.STAGE_CONTEXT,
@@ -48,9 +50,9 @@ _COLLECTION_ID_FIELD_MAP: dict[str, str] = {
 }
 
 _FALLBACK_TARGET_ID_BY_KIND: dict[ValidationTargetKind, str] = {
-    ValidationTargetKind.PHASE1_STATE_ENVELOPE: _FALLBACK_STATE_ID,
-    ValidationTargetKind.STAGE_CONTEXT: _FALLBACK_STAGE_ID,
-    ValidationTargetKind.HYPOTHESIS_BOARD_INIT: _FALLBACK_BOARD_TARGET_ID,
+    ValidationTargetKind.PHASE1_STATE_ENVELOPE: FALLBACK_STATE_ID,
+    ValidationTargetKind.STAGE_CONTEXT: FALLBACK_STAGE_ID,
+    ValidationTargetKind.HYPOTHESIS_BOARD_INIT: FALLBACK_BOARD_ID,
     ValidationTargetKind.EVIDENCE_ATOM: "evidence-unknown",
     ValidationTargetKind.CLAIM_REFERENCE: "claim_ref-unknown",
     ValidationTargetKind.HYPOTHESIS_STATE: "hypothesis-unknown",
@@ -89,13 +91,13 @@ def validate_phase1_schema(
                 "candidate payload must be dict[str, object] or Phase1StateEnvelope"
             ),
             target_kind=ValidationTargetKind.PHASE1_STATE_ENVELOPE,
-            target_id=_FALLBACK_STATE_ID,
+            target_id=FALLBACK_STATE_ID,
             blocking=True,
             suggested_fix="provide a structured payload dict aligned with Phase1StateEnvelope",
         )
         return _build_report_from_payload(
             payload=None,
-            state_id=_FALLBACK_STATE_ID,
+            state_id=FALLBACK_STATE_ID,
             issues=(issue,),
             generated_at=generated_at,
             report_id=report_id,
@@ -110,7 +112,7 @@ def validate_phase1_schema(
         state_id = _extract_validated_id(
             candidate.get("state_id"),
             pattern=STATE_ID_PATTERN,
-            fallback=_FALLBACK_STATE_ID,
+            fallback=FALLBACK_STATE_ID,
         )
         return _build_report_from_payload(
             payload=candidate,
@@ -140,14 +142,14 @@ def _convert_validation_error_to_issues(
     case_id = _extract_validated_id(
         payload.get("case_id"),
         pattern=CASE_ID_PATTERN,
-        fallback=_FALLBACK_CASE_ID,
+        fallback=FALLBACK_CASE_ID,
     )
     stage_id = _extract_stage_id(payload)
     board_id = _extract_board_id(payload)
     state_id = _extract_validated_id(
         payload.get("state_id"),
         pattern=STATE_ID_PATTERN,
-        fallback=_FALLBACK_STATE_ID,
+        fallback=FALLBACK_STATE_ID,
     )
 
     issues: list[ValidationIssue] = []
@@ -156,6 +158,7 @@ def _convert_validation_error_to_issues(
         loc = tuple(error_item.get("loc", ()))
         target_kind = _infer_target_kind(loc)
         error_type = str(error_item.get("type", ""))
+        error_ctx = error_item.get("ctx")
         target_id = _infer_target_id(
             target_kind=target_kind,
             loc=loc,
@@ -167,7 +170,11 @@ def _convert_validation_error_to_issues(
         )
         issue_code = (
             "schema.model_error"
-            if _is_model_level_error(loc=loc, error_type=error_type)
+            if _is_model_level_error(
+                loc=loc,
+                error_type=error_type,
+                error_ctx=error_ctx,
+            )
             else "schema.field_error"
         )
 
@@ -232,15 +239,15 @@ def _build_report_from_payload(
     validator_name: str,
     validator_version: str,
 ) -> StateValidationReport:
-    case_id = _FALLBACK_CASE_ID
-    stage_id = _FALLBACK_STAGE_ID
+    case_id = FALLBACK_CASE_ID
+    stage_id = FALLBACK_STAGE_ID
     board_id: str | None = None
 
     if payload is not None:
         case_id = _extract_validated_id(
             payload.get("case_id"),
             pattern=CASE_ID_PATTERN,
-            fallback=_FALLBACK_CASE_ID,
+            fallback=FALLBACK_CASE_ID,
         )
         stage_id = _extract_stage_id(payload)
         board_id = _extract_board_id(payload)
@@ -273,7 +280,7 @@ def _build_report(
     has_blocking_issue = any(issue.blocking for issue in issues)
 
     if generated_at is None:
-        generated_at = datetime.utcnow()
+        generated_at = utc_now()
 
     if report_id is None:
         report_id = f"report-schema-{state_id}"
@@ -316,12 +323,12 @@ def _extract_validated_id(
 def _extract_stage_id(payload: dict[str, object]) -> str:
     stage_context = payload.get("stage_context")
     if not isinstance(stage_context, dict):
-        return _FALLBACK_STAGE_ID
+        return FALLBACK_STAGE_ID
 
     return _extract_validated_id(
         stage_context.get("stage_id"),
         pattern=STAGE_ID_PATTERN,
-        fallback=_FALLBACK_STAGE_ID,
+        fallback=FALLBACK_STAGE_ID,
     )
 
 
@@ -369,7 +376,7 @@ def _infer_target_id(
         return stage_id
 
     if target_kind is ValidationTargetKind.HYPOTHESIS_BOARD_INIT:
-        return board_id or _FALLBACK_BOARD_TARGET_ID
+        return board_id or FALLBACK_BOARD_ID
 
     if target_kind is ValidationTargetKind.STATE_VALIDATION_REPORT:
         report_payload = payload.get("validation_report")
@@ -440,19 +447,45 @@ def _format_field_path(loc: tuple[object, ...]) -> str | None:
     return path or None
 
 
-def _is_model_level_error(*, loc: tuple[object, ...], error_type: str) -> bool:
+def _is_model_level_error(
+    *,
+    loc: tuple[object, ...],
+    error_type: str,
+    error_ctx: object,
+) -> bool:
+    """Classify model-level schema failures conservatively.
+
+    Notes:
+    - We intentionally treat object-scope errors (e.g. collection item level,
+      root object level) as `schema.model_error` to avoid misclassifying
+      model_validator consistency checks as field errors.
+    - Missing required fields remain `schema.field_error`.
+    """
+
     if not loc:
         return True
 
     if len(loc) == 1 and loc[0] in {"__root__", "model"}:
         return True
 
+    first = loc[0]
+    if isinstance(first, str) and first in _ROOT_FIELD_TARGET_KIND_MAP:
+        if len(loc) == 1:
+            return error_type != "missing"
+
+        # Collection item object-level errors, e.g. evidence_atoms[0].
+        if len(loc) == 2 and isinstance(loc[1], int):
+            return True
+
+        if len(loc) == 2 and loc[1] in {"__root__", "model"}:
+            return True
+
+    # Custom validator errors often carry an exception object in ctx.error.
+    if isinstance(error_ctx, dict) and "error" in error_ctx:
+        return len(loc) <= 2
+
     if error_type == "value_error":
-        last = loc[-1]
-        if isinstance(last, int):
-            return True
-        if isinstance(last, str) and last in _ROOT_FIELD_TARGET_KIND_MAP:
-            return True
+        return len(loc) <= 2
 
     return False
 

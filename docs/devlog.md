@@ -243,3 +243,19 @@
 - 变更原因: 将 Phase 1 结构校验能力从模型构造异常外化为可复用 `StateValidationReport` 机制模块，并新增 Phase 1-3 范围内保守时序校验，为后续 write-gate 组合验证做准备；本次不引入 pipeline/writer/event-log/unsupported-claim 逻辑，保持 Direction A 现状。
 - 验证方式: `python -m pytest -q tests/test_schema_validator.py tests/test_temporal_validator.py tests/test_provenance_validator.py`。
 
+- 任务: Phase 1-3 validator hardening（统一时间源 + model_error 判定稳健化 + fallback id 收口）
+- 变更文件:
+	- src/utils/__init__.py
+	- src/utils/time.py
+	- src/validators/constants.py
+	- src/validators/schema_validator.py
+	- src/validators/temporal_validator.py
+	- src/validators/provenance_validator.py
+	- tests/test_schema_validator.py
+	- tests/test_temporal_validator.py
+	- tests/test_provenance_validator.py
+	- docs/devlog.md
+	- teach/phase1_3_validator_hardening_2026_04_27.md
+- 变更原因: 避免 `datetime.utcnow()` 继续扩散，新增统一 `utc_now()` 以降低后续 naive/aware 时间策略切换成本；将 schema validator 的 fallback id 迁移到共享常量，降低未来 id pattern 调整导致 report 构造失败的风险；放宽 `schema.model_error` 识别规则并增加回归测试，降低 model_validator 一致性错误被误分为 field_error 的概率。
+- 验证方式: `python -m pytest -q tests/test_schema_validator.py tests/test_temporal_validator.py tests/test_provenance_validator.py tests/test_phase1_state_envelope.py`（45 passed）。
+
