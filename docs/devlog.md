@@ -259,3 +259,13 @@
 - 变更原因: 避免 `datetime.utcnow()` 继续扩散，新增统一 `utc_now()` 以降低后续 naive/aware 时间策略切换成本；将 schema validator 的 fallback id 迁移到共享常量，降低未来 id pattern 调整导致 report 构造失败的风险；放宽 `schema.model_error` 识别规则并增加回归测试，降低 model_validator 一致性错误被误分为 field_error 的概率。
 - 验证方式: `python -m pytest -q tests/test_schema_validator.py tests/test_temporal_validator.py tests/test_provenance_validator.py tests/test_phase1_state_envelope.py`（45 passed）。
 
+- 任务: Phase 1-3 Issue 3（conservative unsupported-claim validator for Phase1StateEnvelope）
+- 变更文件:
+	- src/validators/unsupported_claims.py
+	- src/validators/__init__.py
+	- tests/test_unsupported_claims.py
+	- docs/devlog.md
+	- teach/phase1_3_unsupported_claim_validator_2026_04_27.md
+- 变更原因: 新增独立可执行的 unsupported-claim 机制校验器，在不引入 LLM/NLI/指南推理的前提下，对 claim 的“缺失证据引用、不可用证据引用、target 绑定失效”进行阻断式结构化报告，并对“强 claim 仅由弱/不确定/reported 证据支撑”输出非阻断 warning，满足 Direction A 的可审计与确定性要求。
+- 验证方式: `python -m pytest -q tests/test_unsupported_claims.py tests/test_schema_validator.py tests/test_temporal_validator.py tests/test_provenance_validator.py`。
+
