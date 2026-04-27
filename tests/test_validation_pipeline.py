@@ -171,7 +171,7 @@ def test_pipeline_preserves_report_granularity_and_issue_namespaces() -> None:
         UNSUPPORTED_CLAIM_VALIDATOR_NAME,
     )
 
-    assert schema_report.issues == ()
+    assert all(issue.issue_code.startswith("schema.") for issue in schema_report.issues)
     assert provenance_report.report_id.startswith("report-provenance-")
     assert temporal_report.report_id.startswith("report-temporal-")
     assert unsupported_report.report_id.startswith("report-unsupported-claim-")

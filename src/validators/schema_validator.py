@@ -30,7 +30,7 @@ from .constants import (
 )
 
 SCHEMA_VALIDATOR_NAME = "phase1_schema_validator"
-SCHEMA_VALIDATOR_VERSION = "1.3.0"
+SCHEMA_VALIDATOR_VERSION = "1.3.1"
 
 _ROOT_FIELD_TARGET_KIND_MAP: dict[str, ValidationTargetKind] = {
     "stage_context": ValidationTargetKind.STAGE_CONTEXT,
@@ -72,17 +72,13 @@ def validate_phase1_schema(
 ) -> StateValidationReport:
     """Validate one candidate payload/envelope and return structured report."""
 
-    if isinstance(candidate, Phase1StateEnvelope):
-        return _build_report_from_envelope(
-            envelope=candidate,
-            issues=(),
-            generated_at=generated_at,
-            report_id=report_id,
-            validator_name=validator_name,
-            validator_version=validator_version,
-        )
+    candidate_payload = (
+        candidate.model_dump(mode="python")
+        if isinstance(candidate, Phase1StateEnvelope)
+        else candidate
+    )
 
-    if not isinstance(candidate, dict):
+    if not isinstance(candidate_payload, dict):
         issue = ValidationIssue(
             issue_id="issue-schema-0001",
             issue_code="schema.invalid_payload",
@@ -106,16 +102,16 @@ def validate_phase1_schema(
         )
 
     try:
-        envelope = Phase1StateEnvelope(**candidate)
+        envelope = Phase1StateEnvelope.model_validate(candidate_payload)
     except ValidationError as exc:
-        issues = _convert_validation_error_to_issues(exc=exc, payload=candidate)
+        issues = _convert_validation_error_to_issues(exc=exc, payload=candidate_payload)
         state_id = _extract_validated_id(
-            candidate.get("state_id"),
+            candidate_payload.get("state_id"),
             pattern=STATE_ID_PATTERN,
             fallback=FALLBACK_STATE_ID,
         )
         return _build_report_from_payload(
-            payload=candidate,
+            payload=candidate_payload,
             state_id=state_id,
             issues=issues,
             generated_at=generated_at,

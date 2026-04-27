@@ -108,6 +108,55 @@ def test_validate_phase1_schema_accepts_preconstructed_envelope() -> None:
     assert report.stage_id == envelope.stage_context.stage_id
 
 
+def test_validate_phase1_schema_revalidates_mutated_envelope_board_closure() -> None:
+    envelope = build_valid_envelope()
+    envelope.board_init.hypothesis_ids = ("hyp-999",)
+    envelope.board_init.ranked_hypothesis_ids = ("hyp-999",)
+
+    report = validate_phase1_schema(envelope)
+
+    assert report.is_valid is False
+    assert report.has_blocking_issue is True
+    assert any(issue.issue_code == "schema.model_error" for issue in report.issues)
+    assert any(issue.blocking for issue in report.issues)
+    assert any(
+        "board_init.hypothesis_ids must exactly match envelope ids" in issue.message
+        for issue in report.issues
+    )
+
+
+def test_validate_phase1_schema_revalidates_mutated_envelope_hypothesis_closure() -> None:
+    envelope = build_valid_envelope()
+    envelope.action_candidates[0].linked_hypothesis_ids = ("hyp-999",)
+
+    report = validate_phase1_schema(envelope)
+
+    assert report.is_valid is False
+    assert report.has_blocking_issue is True
+    assert any(issue.issue_code == "schema.model_error" for issue in report.issues)
+    assert any(issue.blocking for issue in report.issues)
+    assert any(
+        "action linked_hypothesis_ids not found in hypotheses" in issue.message
+        for issue in report.issues
+    )
+
+
+def test_validate_phase1_schema_revalidates_mutated_envelope_claim_closure() -> None:
+    envelope = build_valid_envelope()
+    envelope.claim_references[0].target_id = "hyp-999"
+
+    report = validate_phase1_schema(envelope)
+
+    assert report.is_valid is False
+    assert report.has_blocking_issue is True
+    assert any(issue.issue_code == "schema.model_error" for issue in report.issues)
+    assert any(issue.blocking for issue in report.issues)
+    assert any(
+        "claim_ref target mismatch for hypotheses" in issue.message
+        for issue in report.issues
+    )
+
+
 def test_validate_phase1_schema_uses_utc_now_helper(monkeypatch: object) -> None:
     expected = datetime(2026, 4, 27, 9, 30, 0, tzinfo=timezone.utc)
     monkeypatch.setattr("src.validators.schema_validator.utc_now", lambda: expected)

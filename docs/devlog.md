@@ -332,3 +332,13 @@
 - 验证方式: `python -m pytest -q tests/test_intake_schemas.py tests/test_intake_gate.py tests/test_source_document_evidence_alignment.py`。
 - 边界说明: 本次未重写 `Phase1StateEnvelope`，未改写 `attempt_phase1_write` 行为，仅新增前置 intake 与桥接校验能力。
 
+- 任务: Phase 1-3 schema validator mutation hardening（已构造 envelope 重验）
+- 变更文件:
+	- src/validators/schema_validator.py
+	- tests/test_schema_validator.py
+	- tests/test_validation_pipeline.py
+	- docs/devlog.md
+	- teach/phase1_3_schema_validator_mutation_hardening_2026_04_27.md
+- 变更原因: 修复 `validate_phase1_schema` 对已构造 `Phase1StateEnvelope` 的“直接信任”缺口。由于 Pydantic 默认可变，实例在构造后可被突变，若不重跑 envelope-level model_validator，会让 board/hypothesis/claim 闭包错误绕过 schema gate。此次改为对 envelope 输入执行 `model_dump -> model_validate` 的显式重验，并补充“先构造后突变”回归测试。
+- 验证方式: `python -m pytest -q tests/test_schema_validator.py tests/test_validation_pipeline.py`（20 passed）。
+
