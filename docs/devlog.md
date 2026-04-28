@@ -619,3 +619,15 @@
 	- `python -m pytest -q tests/test_hypothesis_board_bootstrapper_adapter.py tests/test_hypothesis_board_bootstrapper_agent.py`
 	- `python -m pytest -q`
 - 边界说明: 本次未修改 `src/schemas/board.py` 或放宽 `HypothesisBoardInit.hypothesis_ids`，未新增真实 provider/API-key 集成，未创建 authoritative `Phase1StateEnvelope`，未写入 state，未实现 pipeline/orchestration、冲突升级、belief revision、arbitration 或 final diagnosis。
+
+- 任务: Phase 1 LLM-backed pipeline Issue 8（Phase 1 pipeline orchestration）
+- 变更文件:
+	- src/orchestration/__init__.py
+	- src/orchestration/phase1_pipeline.py
+	- tests/test_phase1_pipeline.py
+	- docs/devlog.md
+- 变更原因: 新增完整 Phase 1 runtime path，将 free text intake、CaseStructurerAgent、EvidenceAtomizerAgent、HypothesisBoardBootstrapperAgent、candidate `Phase1StateEnvelope` construction 与现有 `attempt_phase1_write` 串接；保留 LLM 输出为 candidate-only，最终写入仍由 validators/state_writer gate 决定。
+- 验证方式:
+	- `python -m pytest -q tests/test_phase1_pipeline.py`
+	- `python -m pytest -q`
+- 边界说明: 本次未新增真实 provider/API-key 集成，未修改 `src/schemas/board.py`、state schema、validators、state_writer、storage 或 prompt templates；不允许 evidence-only envelope，不放宽 `HypothesisBoardInit.hypothesis_ids`，不实现 Phase 2-5 或 frontend。
