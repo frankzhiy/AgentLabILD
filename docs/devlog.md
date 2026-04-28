@@ -631,3 +631,56 @@
 	- `python -m pytest -q tests/test_phase1_pipeline.py`
 	- `python -m pytest -q`
 - 边界说明: 本次未新增真实 provider/API-key 集成，未修改 `src/schemas/board.py`、state schema、validators、state_writer、storage 或 prompt templates；不允许 evidence-only envelope，不放宽 `HypothesisBoardInit.hypothesis_ids`，不实现 Phase 2-5 或 frontend。
+
+- 任务: Phase 1 LLM-backed pipeline Issue 9（obsolete placeholder cleanup）
+- 变更文件:
+	- src/agents/placeholder.py
+	- src/evaluation/placeholder.py
+	- src/llm/placeholder.py
+	- src/pipeline/__init__.py
+	- src/pipeline/placeholder.py
+	- src/provenance/placeholder.py
+	- src/storage/placeholder.py
+	- src/tracing/placeholder.py
+	- docs/devlog.md
+- 变更原因: Phase 1 runtime path 已具备真实 intake、prompt rendering、LLM runner contract、adapter/agent、trace、bootstrapper 与 orchestration 实现；删除 active Phase 1/infra packages 中无引用的 placeholder modules，并更新 stale `src.pipeline` skeleton 注释以指向 `src.orchestration`。
+- 验证方式:
+	- `rg` 检查删除候选没有 live imports/references
+	- `python -m pytest -q`
+- 边界说明: 本次未新增功能，未修改 Phase 1 semantics，未调用或集成真实 LLM provider；后续 runtime structure audit 继续移除 obsolete wrappers 与 future-phase placeholder files。
+
+- 任务: Phase 1 runtime structure audit and cleanup（adapter bridge gate + obsolete skeleton removal）
+- 变更文件:
+	- AGENTS.md
+	- pyproject.toml
+	- src/__init__.py
+	- src/agents/__init__.py
+	- src/orchestration/phase1_pipeline.py
+	- tests/__init__.py
+	- tests/test_adapter_import_compatibility.py
+	- tests/test_phase1_pipeline.py
+	- docs/devlog.md
+- 删除文件:
+	- run.py
+	- src/runner.py
+	- src/agents/case_structurer.py
+	- src/agents/evidence_atomizer.py
+	- src/agents/placeholder.py
+	- src/arbitration/placeholder.py
+	- src/communication/placeholder.py
+	- src/conflict/placeholder.py
+	- src/evaluation/placeholder.py
+	- src/llm/placeholder.py
+	- src/pipeline/placeholder.py
+	- src/provenance/placeholder.py
+	- src/revision/placeholder.py
+	- src/storage/placeholder.py
+	- src/tracing/placeholder.py
+	- tests/test_skeleton_imports.py
+	- tests/test_phase1_4_smoke_flow.py
+	- teach/*.md
+- 变更原因: 当前 Phase 1 runtime 已有显式 orchestration path；将 adapter draft-source validation 纳入 `Phase1Pipeline`，在 evidence draft accepted 后、HypothesisBoardBootstrapperAgent 前阻断 source alignment 失败；同时移除 reset skeleton runner、placeholder-only modules、旧 adapter compatibility wrappers 与默认 teaching-note artifacts，使仓库结构更贴近当前 Phase 1 runtime flow。
+- 验证方式:
+	- `rg` 检查旧 wrapper、runner、placeholder 与 provider dependency references
+	- `python -m pytest -q`
+- 边界说明: 本次未新增 provider/API-key 集成，未修改 `src/schemas/board.py` 或放宽 `HypothesisBoardInit.hypothesis_ids`，未改变 Phase 1 state semantics；state writer 仍只在 intake、case structurer、evidence atomizer、adapter bridge 与 bootstrapper 全部通过后触达。

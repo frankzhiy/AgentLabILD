@@ -1,4 +1,4 @@
-"""Tests for adapter migration import compatibility."""
+"""Tests for explicit adapter and agent import locations."""
 
 from __future__ import annotations
 
@@ -12,25 +12,35 @@ from src.adapters.evidence_atomizer_adapter import (
     build_evidence_atomizer_prompt,
     parse_evidence_atomizer_payload,
 )
-from src.agents.case_structurer import (
-    CaseStructurerInput as LegacyCaseStructurerInput,
-    build_case_structurer_prompt as legacy_build_case_structurer_prompt,
-    parse_case_structurer_payload as legacy_parse_case_structurer_payload,
+from src.agents import (
+    CaseStructurerAgent,
+    EvidenceAtomizerAgent,
+    HypothesisBoardBootstrapperAgent,
 )
-from src.agents.evidence_atomizer import (
-    EvidenceAtomizerInput as LegacyEvidenceAtomizerInput,
-    build_evidence_atomizer_prompt as legacy_build_evidence_atomizer_prompt,
-    parse_evidence_atomizer_payload as legacy_parse_evidence_atomizer_payload,
+from src.agents.case_structurer_agent import (
+    CaseStructurerAgent as DirectCaseStructurerAgent,
+)
+from src.agents.evidence_atomizer_agent import (
+    EvidenceAtomizerAgent as DirectEvidenceAtomizerAgent,
+)
+from src.agents.hypothesis_board_bootstrapper_agent import (
+    HypothesisBoardBootstrapperAgent as DirectHypothesisBoardBootstrapperAgent,
 )
 
 
-def test_case_structurer_new_and_legacy_imports_resolve_same_objects() -> None:
-    assert LegacyCaseStructurerInput is CaseStructurerInput
-    assert legacy_build_case_structurer_prompt is build_case_structurer_prompt
-    assert legacy_parse_case_structurer_payload is parse_case_structurer_payload
+def test_case_structurer_adapter_imports_resolve() -> None:
+    assert CaseStructurerInput.__name__ == "CaseStructurerInput"
+    assert callable(build_case_structurer_prompt)
+    assert callable(parse_case_structurer_payload)
 
 
-def test_evidence_atomizer_new_and_legacy_imports_resolve_same_objects() -> None:
-    assert LegacyEvidenceAtomizerInput is EvidenceAtomizerInput
-    assert legacy_build_evidence_atomizer_prompt is build_evidence_atomizer_prompt
-    assert legacy_parse_evidence_atomizer_payload is parse_evidence_atomizer_payload
+def test_evidence_atomizer_adapter_imports_resolve() -> None:
+    assert EvidenceAtomizerInput.__name__ == "EvidenceAtomizerInput"
+    assert callable(build_evidence_atomizer_prompt)
+    assert callable(parse_evidence_atomizer_payload)
+
+
+def test_agent_package_exports_real_agent_classes_only() -> None:
+    assert CaseStructurerAgent is DirectCaseStructurerAgent
+    assert EvidenceAtomizerAgent is DirectEvidenceAtomizerAgent
+    assert HypothesisBoardBootstrapperAgent is DirectHypothesisBoardBootstrapperAgent

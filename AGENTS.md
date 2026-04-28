@@ -59,11 +59,12 @@ If such a boundary is at risk, preserve the mechanism boundary.
 
 ---
 
-### 4. Teaching documentation is mandatory
+### 4. Teaching documentation is explicit-only
 
-After any non-trivial code change, create a markdown note under `teach/`.
+Do not create markdown notes under `teach/` by default.
 
-The teaching note must include:
+Create a `teach/` note only when the user explicitly requests one. When a
+teaching note is requested, include:
 
 1. **Analysis path**  
    Which files were inspected first and why they were the right starting point
@@ -86,7 +87,9 @@ The teaching note must include:
 7. **Concept notes**  
    Programming concepts, framework concepts, and design ideas involved in the change
 
-This note is part of the deliverable, not an optional extra.
+Documentation should otherwise be updated only when the requested change
+modifies architecture, runtime flow, public contracts, or user-facing developer
+behavior.
 
 ---
 

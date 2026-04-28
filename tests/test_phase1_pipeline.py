@@ -27,6 +27,7 @@ from src.adapters.hypothesis_board_bootstrapper_adapter import (
     HypothesisBoardBootstrapperResult,
     HypothesisBoardBootstrapperStatus,
 )
+from src.adapters.validation_bridge import AdapterValidationBridgeStatus
 from src.orchestration import Phase1Pipeline, Phase1PipelineInput, Phase1PipelineResult
 from src.orchestration.phase1_pipeline import Phase1PipelineStatus
 from src.provenance.model import ExtractionMethod
@@ -318,6 +319,15 @@ def _accepted_evidence_result() -> EvidenceAtomizerResult:
     )
 
 
+def _accepted_evidence_result_with_raw_excerpt_mismatch() -> EvidenceAtomizerResult:
+    payload = _evidence_atomization_draft().model_dump(mode="python")
+    payload["evidence_atoms"][0]["raw_excerpt"] = "ground-glass opacity"
+    return EvidenceAtomizerResult(
+        status=EvidenceAtomizerStatus.ACCEPTED,
+        draft=EvidenceAtomizationDraft.model_validate(payload),
+    )
+
+
 def _accepted_bootstrapper_result(
     payload: dict[str, object] | None = None,
 ) -> HypothesisBoardBootstrapperResult:
@@ -371,6 +381,11 @@ def test_phase1_pipeline_accepted_full_path_builds_and_writes_envelope() -> None
 
     assert result.status is Phase1PipelineStatus.ACCEPTED
     assert result.candidate_envelope is not None
+    assert result.adapter_validation_result is not None
+    assert (
+        result.adapter_validation_result.status
+        is AdapterValidationBridgeStatus.PASSED
+    )
     assert result.write_decision is not None
     assert result.write_decision.should_persist is True
     assert len(sink.envelopes) == 1
@@ -445,6 +460,33 @@ def test_phase1_pipeline_evidence_atomizer_manual_review_stops_before_bootstrapp
     assert bootstrapper_agent.calls == 0
     assert result.write_decision is None
     assert len(sink.envelopes) == 0
+
+
+def test_phase1_pipeline_bridge_rejects_bad_raw_excerpt_before_bootstrapper() -> None:
+    pipeline, case_agent, evidence_agent, bootstrapper_agent, sink = _pipeline_with(
+        evidence_result=_accepted_evidence_result_with_raw_excerpt_mismatch()
+    )
+
+    result = pipeline.run(_pipeline_input())
+
+    assert result.status is Phase1PipelineStatus.REJECTED
+    assert result.adapter_validation_result is not None
+    assert (
+        result.adapter_validation_result.status
+        is AdapterValidationBridgeStatus.FAILED
+    )
+    assert result.candidate_envelope is None
+    assert result.write_decision is None
+    assert case_agent.calls == 1
+    assert evidence_agent.calls == 1
+    assert bootstrapper_agent.calls == 0
+    assert len(sink.envelopes) == 0
+    assert any("Adapter validation bridge failed" in error for error in result.errors)
+    assert result.adapter_validation_result.evidence_atomization_report is not None
+    assert any(
+        issue.issue_code == "provenance.raw_excerpt_not_found"
+        for issue in result.adapter_validation_result.evidence_atomization_report.issues
+    )
 
 
 def test_phase1_pipeline_bootstrapper_rejected_stops_before_write_gate() -> None:

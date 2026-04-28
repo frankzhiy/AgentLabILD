@@ -1,6 +1,12 @@
-"""AgentLabILD minimal research platform skeleton."""
+"""AgentLabILD mechanism-governed ILD MDT research platform."""
 
 __all__ = [
-    "runner",
+    "adapters",
+    "agents",
+    "intake",
+    "orchestration",
+    "schemas",
+    "state",
+    "validators",
 ]
 # ILD-MDT 多智能体实验平台

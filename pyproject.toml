@@ -4,14 +4,14 @@ version = "0.1.0"
 description = "ILD-MDT 多智能体临床推理实验平台"
 requires-python = ">=3.11"
 dependencies = [
-    "openai>=1.30",
     "pydantic>=2.0",
-    "pyyaml>=6.0",
-    "langgraph>=0.2",
-    "python-dotenv>=1.0",
 ]
 
 [project.optional-dependencies]
+providers = [
+    "openai>=1.30",
+    "python-dotenv>=1.0",
+]
 dev = [
     "pytest>=8.0",
     "pytest-asyncio>=0.23",

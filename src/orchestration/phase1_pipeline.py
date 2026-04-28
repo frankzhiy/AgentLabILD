@@ -28,6 +28,11 @@ from ..adapters.hypothesis_board_bootstrapper_adapter import (
     HypothesisBoardBootstrapperResult,
     HypothesisBoardBootstrapperStatus,
 )
+from ..adapters.validation_bridge import (
+    AdapterValidationBridgeResult,
+    AdapterValidationBridgeStatus,
+    validate_adapter_drafts_against_sources,
+)
 from ..intake.free_text import FreeTextIntakeBuilder, FreeTextIntakeResult
 from ..schemas.common import NonEmptyStr, normalize_optional_text
 from ..schemas.intake import RawIntakeStatus, SourceDocumentType
@@ -97,6 +102,7 @@ class Phase1PipelineResult(BaseModel):
     intake_result: FreeTextIntakeResult | None = None
     case_structurer_result: CaseStructurerResult | None = None
     evidence_atomizer_result: EvidenceAtomizerResult | None = None
+    adapter_validation_result: AdapterValidationBridgeResult | None = None
     bootstrapper_result: HypothesisBoardBootstrapperResult | None = None
     candidate_envelope: Phase1StateEnvelope | None = None
     write_decision: WriteDecision | None = None
@@ -222,6 +228,22 @@ class Phase1Pipeline:
             )
 
         assert evidence_atomizer_result.draft is not None
+        adapter_validation_result = validate_adapter_drafts_against_sources(
+            case_structuring_draft=case_structurer_result.draft,
+            evidence_atomization_draft=evidence_atomizer_result.draft,
+            source_documents=(intake_result.source_document,),
+        )
+        if (
+            adapter_validation_result.status
+            is not AdapterValidationBridgeStatus.PASSED
+        ):
+            return _pipeline_result_from_adapter_validation_stop(
+                intake_result=intake_result,
+                case_structurer_result=case_structurer_result,
+                evidence_atomizer_result=evidence_atomizer_result,
+                adapter_validation_result=adapter_validation_result,
+            )
+
         bootstrapper_result = self._hypothesis_board_bootstrapper_agent.run(
             HypothesisBoardBootstrapperInput(
                 case_id=input.case_id,
@@ -238,6 +260,7 @@ class Phase1Pipeline:
                 intake_result=intake_result,
                 case_structurer_result=case_structurer_result,
                 evidence_atomizer_result=evidence_atomizer_result,
+                adapter_validation_result=adapter_validation_result,
                 bootstrapper_result=bootstrapper_result,
             )
 
@@ -254,6 +277,7 @@ class Phase1Pipeline:
                 intake_result=intake_result,
                 case_structurer_result=case_structurer_result,
                 evidence_atomizer_result=evidence_atomizer_result,
+                adapter_validation_result=adapter_validation_result,
                 bootstrapper_result=bootstrapper_result,
                 candidate_envelope=None,
                 write_decision=None,
@@ -274,6 +298,7 @@ class Phase1Pipeline:
             intake_result=intake_result,
             case_structurer_result=case_structurer_result,
             evidence_atomizer_result=evidence_atomizer_result,
+            adapter_validation_result=adapter_validation_result,
             bootstrapper_result=bootstrapper_result,
             candidate_envelope=candidate_envelope,
             write_decision=write_decision,
@@ -384,11 +409,37 @@ def _pipeline_result_from_evidence_atomizer_stop(
     )
 
 
+def _pipeline_result_from_adapter_validation_stop(
+    *,
+    intake_result: FreeTextIntakeResult,
+    case_structurer_result: CaseStructurerResult,
+    evidence_atomizer_result: EvidenceAtomizerResult,
+    adapter_validation_result: AdapterValidationBridgeResult,
+) -> Phase1PipelineResult:
+    status = _pipeline_status_from_adapter_validation_status(
+        adapter_validation_result.status
+    )
+    return Phase1PipelineResult(
+        status=status,
+        intake_result=intake_result,
+        case_structurer_result=case_structurer_result,
+        evidence_atomizer_result=evidence_atomizer_result,
+        adapter_validation_result=adapter_validation_result,
+        errors=(adapter_validation_result.summary,)
+        if status is Phase1PipelineStatus.REJECTED
+        else (),
+        warnings=(adapter_validation_result.summary,)
+        if status is Phase1PipelineStatus.MANUAL_REVIEW
+        else (),
+    )
+
+
 def _pipeline_result_from_bootstrapper_stop(
     *,
     intake_result: FreeTextIntakeResult,
     case_structurer_result: CaseStructurerResult,
     evidence_atomizer_result: EvidenceAtomizerResult,
+    adapter_validation_result: AdapterValidationBridgeResult,
     bootstrapper_result: HypothesisBoardBootstrapperResult,
 ) -> Phase1PipelineResult:
     status = _pipeline_status_from_bootstrapper_status(bootstrapper_result.status)
@@ -397,6 +448,7 @@ def _pipeline_result_from_bootstrapper_stop(
         intake_result=intake_result,
         case_structurer_result=case_structurer_result,
         evidence_atomizer_result=evidence_atomizer_result,
+        adapter_validation_result=adapter_validation_result,
         bootstrapper_result=bootstrapper_result,
         errors=bootstrapper_result.errors
         if status is Phase1PipelineStatus.REJECTED
@@ -436,6 +488,16 @@ def _pipeline_status_from_bootstrapper_status(
     if status is HypothesisBoardBootstrapperStatus.ACCEPTED:
         return Phase1PipelineStatus.ACCEPTED
     if status is HypothesisBoardBootstrapperStatus.REJECTED:
+        return Phase1PipelineStatus.REJECTED
+    return Phase1PipelineStatus.MANUAL_REVIEW
+
+
+def _pipeline_status_from_adapter_validation_status(
+    status: AdapterValidationBridgeStatus,
+) -> Phase1PipelineStatus:
+    if status is AdapterValidationBridgeStatus.PASSED:
+        return Phase1PipelineStatus.ACCEPTED
+    if status is AdapterValidationBridgeStatus.FAILED:
         return Phase1PipelineStatus.REJECTED
     return Phase1PipelineStatus.MANUAL_REVIEW
 

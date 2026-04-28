@@ -1,1 +1,1 @@
-"""Test package for the reset skeleton platform."""
+"""Test package for AgentLabILD Phase 1 mechanisms."""

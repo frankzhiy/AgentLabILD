@@ -1,4 +1,5 @@
-"""Pipeline package skeleton.
+"""Legacy pipeline namespace.
 
-TODO: add orchestration adapters after schema and validator layers stabilize.
+Phase 1 runtime orchestration now lives in ``src.orchestration``. This package
+is kept importable for compatibility with older skeleton checks.
 """
