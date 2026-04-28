@@ -527,3 +527,21 @@
 	- `python -m pytest -q tests/test_case_structurer_adapter.py tests/test_evidence_atomizer_adapter.py tests/test_prompt_template_renderer.py`
 	- `python -m pytest -q`
 - 边界说明: 本次未新增 LLM 调用，未迁移 adapter 文件，未修改 validators、state writer、storage、board schema 或 pipeline。
+
+- 任务: Phase 1 LLM-backed pipeline Issue 2（structured LLM runner + schema export）
+- 变更文件:
+	- src/llm/provider_config.py
+	- src/llm/schema_export.py
+	- src/llm/retry_policy.py
+	- src/llm/structured_runner.py
+	- src/llm/__init__.py
+	- tests/test_llm_schema_export.py
+	- tests/test_llm_retry_policy.py
+	- tests/test_llm_structured_runner.py
+	- teach/phase1_llm_structured_runner_schema_export_2026_04_28.md
+	- docs/devlog.md
+- 变更原因: 新增可复用 structured LLM 调用层与 Pydantic schema export 工具，为后续真实 agent 接入做机制准备；provider 调用语义集中在 runner，adapter/validator/state writer 继续保持无 LLM 副作用。
+- 验证方式:
+	- `python -m pytest -q tests/test_llm_schema_export.py tests/test_llm_retry_policy.py tests/test_llm_structured_runner.py`
+	- `python -m pytest -q`
+- 边界说明: 本次仅实现 Issue 2；未创建真实 agent，未迁移 adapter，未新增 provider API-key 依赖，未创建 authoritative `Phase1StateEnvelope`，未修改 validators、state writer、storage、board schema 或 pipeline。
