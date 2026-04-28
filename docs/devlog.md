@@ -562,3 +562,16 @@
 - 验证方式:
 	- `python -m pytest -q`
 - 边界说明: 本次仅迁移 adapter 归属；未新增 LLM provider 调用、真实 agent、state writer 调用、authoritative state 构造、HypothesisBoardBootstrapper、validators/storage/board schema/pipeline 修改。
+
+- 任务: Phase 1 LLM-backed pipeline Issue 4（CaseStructurerAgent / EvidenceAtomizerAgent coordination wrappers）
+- 变更文件:
+	- src/agents/case_structurer_agent.py
+	- src/agents/evidence_atomizer_agent.py
+	- src/agents/__init__.py
+	- tests/test_case_structurer_agent.py
+	- tests/test_evidence_atomizer_agent.py
+	- docs/devlog.md
+- 变更原因: 新增真实 agent 协调层，但保持其职责极薄：接收 adapter input、构建已渲染 prompt、导出 Pydantic response schema、调用注入的 `StructuredLLMRunner`、将 parsed dict 交给 adapter parser；runner failure/manual_review 映射为 adapter manual_review，不伪造 draft。
+- 验证方式:
+	- `python -m pytest -q`
+- 边界说明: 本次未新增真实 provider/API-key 集成，未修改 adapters、validators、state writer、storage、board schema、prompt templates、orchestration 或 pipeline；adapter 仍负责输出边界检查，agent 不持久化 state。

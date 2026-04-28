@@ -11,6 +11,7 @@ from .case_structurer import (
 	build_case_structurer_prompt,
 	parse_case_structurer_payload,
 )
+from .case_structurer_agent import CaseStructurerAgent
 from .evidence_atomizer import (
 	EvidenceAtomizerInput,
 	EvidenceAtomizerResult,
@@ -18,16 +19,19 @@ from .evidence_atomizer import (
 	build_evidence_atomizer_prompt,
 	parse_evidence_atomizer_payload,
 )
+from .evidence_atomizer_agent import EvidenceAtomizerAgent
 
 __all__ = [
 	"CaseStructurerInput",
 	"CaseStructurerResult",
 	"CaseStructurerStatus",
+	"CaseStructurerAgent",
 	"build_case_structurer_prompt",
 	"parse_case_structurer_payload",
 	"EvidenceAtomizerInput",
 	"EvidenceAtomizerResult",
 	"EvidenceAtomizerStatus",
+	"EvidenceAtomizerAgent",
 	"build_evidence_atomizer_prompt",
 	"parse_evidence_atomizer_payload",
 ]
