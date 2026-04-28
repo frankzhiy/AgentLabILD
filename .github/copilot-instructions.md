@@ -142,8 +142,9 @@ For every non-trivial change:
 - add or update tests
 - explain how to validate the change
 - append a short entry to `docs/devlog.md`
-- add a teaching note under `teach/`
-- document expected runtime data flow when relevant
+- update documentation only when the requested change modifies architecture, runtime flow, public contracts, or user-facing developer behavior
+- do not create `teach/` notes by default
+- create `teach/` notes only when explicitly requested
 
 When implementing a mechanism, tests are mandatory.
 When implementing only prompts or examples, explain why no mechanism-level test is possible.
@@ -153,7 +154,8 @@ When implementing only prompts or examples, explain why no mechanism-level test 
 ## 9) Output style for generated code
 
 - runtime prompts and role prompts may use English
-- engineering docs, comments, and teaching notes should primarily use Chinese
+- engineering docs and comments should primarily use Chinese
+- `teach/` notes are not expected by default; write them only when explicitly requested
 - code should be readable and explicit
 - avoid magical helper layers unless they reduce real complexity
 - prefer deterministic post-processing when possible
