@@ -684,3 +684,22 @@
 	- `rg` 检查旧 wrapper、runner、placeholder 与 provider dependency references
 	- `python -m pytest -q`
 - 边界说明: 本次未新增 provider/API-key 集成，未修改 `src/schemas/board.py` 或放宽 `HypothesisBoardInit.hypothesis_ids`，未改变 Phase 1 state semantics；state writer 仍只在 intake、case structurer、evidence atomizer、adapter bridge 与 bootstrapper 全部通过后触达。
+
+- 任务: Test suite compact-policy cleanup
+- 变更文件:
+	- tests/test_adapter_import_compatibility.py
+	- tests/test_event_log.py
+	- tests/test_phase1_fixtures.py
+	- tests/test_phase1_metrics.py
+	- tests/test_phase1_report.py
+	- tests/test_phase1_runner.py
+	- tests/test_phase1_trace.py
+	- tests/test_state_event.py
+	- tests/test_state_store.py
+	- tests/test_versioned_state_sink.py
+	- tests/fixtures/phase1/*.json
+	- docs/devlog.md
+- 变更原因: 按 compact test policy 收敛测试目录，仅保留当前 Phase 1 runtime flow、核心 state/schema invariants、validator/state-writer gates 三类机制关键测试；移除临时兼容、评估指标、fixture runner、reporting、event log/state store/versioned sink、独立 trace 测试及其不再被引用的大型 fixture payloads。
+- 验证方式:
+	- `python -m pytest -q`（393 passed）
+- 边界说明: 本次未修改 source code、schemas、prompt、Phase 1 runtime behavior 或测试语义以迁就删除；未删除 source 文件、未新增 LLM provider 调用、未创建 `teach/` note。

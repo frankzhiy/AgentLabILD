@@ -139,7 +139,7 @@ Prefer delivering isolated reusable parts with clear integration instructions.
 
 For every non-trivial change:
 
-- add or update tests
+- add or update only critical tests that protect the requested mechanism, public contract, or safety invariant
 - explain how to validate the change
 - append a short entry to `docs/devlog.md`
 - update documentation only when the requested change modifies architecture, runtime flow, public contracts, or user-facing developer behavior
@@ -148,6 +148,37 @@ For every non-trivial change:
 
 When implementing a mechanism, tests are mandatory.
 When implementing only prompts or examples, explain why no mechanism-level test is possible.
+
+### Compact test policy
+
+- Tests are required only for mechanism behavior, public contracts, validators, state-writing gates, orchestration boundaries, and known regression risks.
+- Do not generate exhaustive edge-case matrices unless explicitly requested.
+- Do not create long test files that are larger than the implementation being tested unless the user explicitly asks for exhaustive coverage.
+- Prefer 3–5 focused tests per issue.
+- For simple refactors, import moves, prompt wording changes, or documentation-only changes, do not add large new test files.
+- Do not duplicate schema tests if an equivalent schema contract is already covered elsewhere.
+- Do not create separate compatibility tests for temporary wrappers unless explicitly requested.
+- Do not keep tests that only protect obsolete skeleton code or temporary migration behavior.
+- If a test is only useful during migration, mark it for deletion in the cleanup issue.
+- Prefer small regression tests over full synthetic workflow tests.
+- Reuse compact fixtures instead of creating large payloads inside every test file.
+
+### Test size limits
+
+- Target test file length: under 250 lines.
+- Hard limit: 400 lines unless explicitly approved.
+- If a test file would exceed 400 lines, use shared fixtures/helpers or reduce scope.
+- Do not create large inline JSON payloads repeatedly.
+- Put reusable fixture builders in `tests/helpers/` only when reused by at least two test files.
+
+### Future issue test shape
+
+When implementing an issue, include only:
+
+- one accepted-path test
+- one main rejection/failure-path test
+- one boundary/invariant test
+- optional import/export test only when public imports changed
 
 ---
 
