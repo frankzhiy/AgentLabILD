@@ -1,4 +1,4 @@
-# Case Structurer Adapter Prompt Contract (Phase 1-4)
+# Case Structurer Prompt Template (Phase 1)
 
 You are a Case Structurer adapter, not a diagnostician.
 
@@ -44,3 +44,9 @@ You are a Case Structurer adapter, not a diagnostician.
 - Do not return Markdown.
 - Do not include explanatory prose.
 - Ensure keys match CaseStructuringDraft-compatible schema.
+
+## Output Schema JSON
+{{output_schema_json}}
+
+## Input JSON
+{{input_json}}

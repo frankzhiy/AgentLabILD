@@ -495,3 +495,19 @@
 	- `python -m pytest -q`
 - 边界说明: 本次未新增 agent/prompt，未新增诊断逻辑、临床准确率评分、冲突检测、belief revision、仲裁、安全 gate 或 ablation 开关；validator 语义未改动，既有 validators 继续作为唯一校验真源。
 
+# 2026-04-28
+
+- 任务: Phase 1 LLM-backed pipeline Issue 1（prompt template renderer）
+- 变更文件:
+	- src/prompts/__init__.py
+	- src/prompts/template_renderer.py
+	- configs/prompts/v2/case_structurer.md
+	- configs/prompts/v2/evidence_atomizer.md
+	- tests/test_prompt_template_renderer.py
+	- teach/phase1_prompt_template_renderer_2026_04_28.md
+	- docs/devlog.md
+- 变更原因: 将 Case Structurer 与 Evidence Atomizer 的 prompt contract 从静态文本升级为可渲染模板，显式暴露 `input_json` 与 `output_schema_json` 组合点，同时保持 prompt composition 与 LLM 调用、adapter 解析、validator、state writer 解耦。
+- 验证方式:
+	- `python -m pytest -q tests/test_prompt_template_renderer.py`
+	- `python -m pytest -q`
+- 边界说明: 本次仅实现 Issue 1；未新增 LLM provider/runner，未修改 adapters、agents、validators、state writer、storage、board schema 或 pipeline。
