@@ -23,6 +23,14 @@ from .evidence_atomizer_adapter import (
     build_evidence_atomizer_prompt,
     parse_evidence_atomizer_payload,
 )
+from .hypothesis_board_bootstrapper_adapter import (
+    HypothesisBoardBootstrapDraft,
+    HypothesisBoardBootstrapperInput,
+    HypothesisBoardBootstrapperResult,
+    HypothesisBoardBootstrapperStatus,
+    build_hypothesis_board_bootstrapper_prompt,
+    parse_hypothesis_board_bootstrapper_payload,
+)
 from .validation_bridge import (
     AdapterValidationBridgeResult,
     AdapterValidationBridgeStatus,
@@ -44,6 +52,10 @@ __all__ = [
     "EvidenceAtomizerInput",
     "EvidenceAtomizerResult",
     "EvidenceAtomizerStatus",
+    "HypothesisBoardBootstrapDraft",
+    "HypothesisBoardBootstrapperInput",
+    "HypothesisBoardBootstrapperResult",
+    "HypothesisBoardBootstrapperStatus",
     "NormalizedFinding",
     "AdapterValidationBridgeResult",
     "AdapterValidationBridgeStatus",
@@ -51,6 +63,8 @@ __all__ = [
     "parse_case_structurer_payload",
     "build_evidence_atomizer_prompt",
     "parse_evidence_atomizer_payload",
+    "build_hypothesis_board_bootstrapper_prompt",
+    "parse_hypothesis_board_bootstrapper_payload",
     "validate_adapter_drafts_against_sources",
     "validate_case_structuring_draft_against_sources",
     "validate_evidence_atomization_draft_against_sources",

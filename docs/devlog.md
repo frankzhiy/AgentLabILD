@@ -603,3 +603,19 @@
 	- `python -m pytest -q tests/test_free_text_intake_builder.py tests/test_intake_gate.py tests/test_skeleton_imports.py`
 	- `python -m pytest -q`
 - 边界说明: 本次仅实现 Issue 6 intake builder；未调用 LLM runner，未创建 CaseStructurerAgent/EvidenceAtomizerAgent，未写入 authoritative state，未修改 validators、state writer、storage、board schema、orchestration 或 pipeline。
+
+- 任务: Phase 1 LLM-backed pipeline Issue 7（Hypothesis Board Bootstrapper）
+- 变更文件:
+	- configs/prompts/v2/hypothesis_board_bootstrapper.md
+	- src/adapters/hypothesis_board_bootstrapper_adapter.py
+	- src/agents/hypothesis_board_bootstrapper_agent.py
+	- src/adapters/__init__.py
+	- src/agents/__init__.py
+	- tests/test_hypothesis_board_bootstrapper_adapter.py
+	- tests/test_hypothesis_board_bootstrapper_agent.py
+	- docs/devlog.md
+- 变更原因: 新增 Phase 1 evidence-to-board bootstrapper，将 validated EvidenceAtomizationDraft 转换为候选 HypothesisState、ClaimReference、ActionCandidate 与非空 HypothesisBoardInit；adapter 负责 forbidden field 与跨对象一致性检查，agent 仅协调 prompt -> runner -> adapter parser。
+- 验证方式:
+	- `python -m pytest -q tests/test_hypothesis_board_bootstrapper_adapter.py tests/test_hypothesis_board_bootstrapper_agent.py`
+	- `python -m pytest -q`
+- 边界说明: 本次未修改 `src/schemas/board.py` 或放宽 `HypothesisBoardInit.hypothesis_ids`，未新增真实 provider/API-key 集成，未创建 authoritative `Phase1StateEnvelope`，未写入 state，未实现 pipeline/orchestration、冲突升级、belief revision、arbitration 或 final diagnosis。

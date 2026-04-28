@@ -20,6 +20,7 @@ from .evidence_atomizer import (
 	parse_evidence_atomizer_payload,
 )
 from .evidence_atomizer_agent import EvidenceAtomizerAgent
+from .hypothesis_board_bootstrapper_agent import HypothesisBoardBootstrapperAgent
 
 __all__ = [
 	"CaseStructurerInput",
@@ -32,6 +33,7 @@ __all__ = [
 	"EvidenceAtomizerResult",
 	"EvidenceAtomizerStatus",
 	"EvidenceAtomizerAgent",
+	"HypothesisBoardBootstrapperAgent",
 	"build_evidence_atomizer_prompt",
 	"parse_evidence_atomizer_payload",
 ]
