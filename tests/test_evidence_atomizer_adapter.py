@@ -181,13 +181,26 @@ def test_valid_input_builds_prompt_with_source_documents_stage_context_and_optio
     prompt = build_evidence_atomizer_prompt(input_model)
 
     assert "### Input JSON" in prompt
+    assert "### Output Schema JSON" in prompt
     assert '"stage_id": "stage-001"' in prompt
     assert '"source_doc_id": "doc-001"' in prompt
     assert "Patient has chronic cough for 8 years." in prompt
+    assert '"title": "EvidenceAtomizationDraft"' in prompt
     assert '"case_structuring_draft_guidance"' in prompt
     assert '"timeline_item_id": "timeline_item-001"' in prompt
     assert '"finding_id": "finding-001"' in prompt
     assert '"clue_group_id": "clue_group-001"' in prompt
+
+
+def test_evidence_atomizer_prompt_renders_template_without_unresolved_placeholders_or_duplicate_input() -> None:
+    prompt = build_evidence_atomizer_prompt(_base_input(with_case_structuring_draft=True))
+
+    assert "{{" not in prompt
+    assert "}}" not in prompt
+    assert prompt.count("### Input JSON") == 1
+    assert prompt.count('"stage_metadata"') == 1
+    assert '"source_documents": [' in prompt
+    assert '"properties": {' in prompt
 
 
 def test_prompt_excludes_hypothesis_diagnosis_action_conflict_arbitration_fields() -> None:

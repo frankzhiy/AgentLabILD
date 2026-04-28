@@ -511,3 +511,19 @@
 	- `python -m pytest -q tests/test_prompt_template_renderer.py`
 	- `python -m pytest -q`
 - 边界说明: 本次仅实现 Issue 1；未新增 LLM provider/runner，未修改 adapters、agents、validators、state writer、storage、board schema 或 pipeline。
+
+- 任务: Phase 1 LLM-backed pipeline Issue 1 follow-up（legacy prompt builder template rendering）
+- 变更文件:
+	- src/agents/case_structurer.py
+	- src/agents/evidence_atomizer.py
+	- configs/prompts/v2/case_structurer.md
+	- configs/prompts/v2/evidence_atomizer.md
+	- tests/test_case_structurer_adapter.py
+	- tests/test_evidence_atomizer_adapter.py
+	- teach/phase1_prompt_template_builder_compatibility_2026_04_28.md
+	- docs/devlog.md
+- 变更原因: 修复 Issue 1 引入的兼容风险：旧 `build_*_prompt()` 函数仍把 prompt 文件当静态文本读取，导致模板占位符可能原样进入 prompt 并重复追加 Input JSON；现改为通过 `render_template_file()` 注入 input/schema，同时保留缺失或空文件时的旧 fallback 行为。
+- 验证方式:
+	- `python -m pytest -q tests/test_case_structurer_adapter.py tests/test_evidence_atomizer_adapter.py tests/test_prompt_template_renderer.py`
+	- `python -m pytest -q`
+- 边界说明: 本次未新增 LLM 调用，未迁移 adapter 文件，未修改 validators、state writer、storage、board schema 或 pipeline。

@@ -15,6 +15,7 @@ from pathlib import Path
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator, model_validator
 
 from ..adapters.case_structuring import CaseStructuringDraft
+from ..prompts import render_template_file
 from ..schemas.common import (
     CASE_ID_PATTERN,
     STAGE_ID_PATTERN,
@@ -192,7 +193,6 @@ class CaseStructurerResult(BaseModel):
 def build_case_structurer_prompt(input: CaseStructurerInput) -> str:
     """Build one Case Structurer prompt from stage metadata and source docs only."""
 
-    prompt_contract = _load_case_structurer_prompt_contract()
     payload = {
         "stage_metadata": _serialize_stage_metadata(input),
         "source_documents": [
@@ -200,9 +200,17 @@ def build_case_structurer_prompt(input: CaseStructurerInput) -> str:
             for source_document in input.source_documents
         ],
     }
-    payload_json = json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True)
 
-    return f"{prompt_contract.rstrip()}\n\n### Input JSON\n{payload_json}\n"
+    if _should_use_case_structurer_fallback_prompt():
+        return _build_case_structurer_fallback_prompt(payload)
+
+    return render_template_file(
+        DEFAULT_PROMPT_PATH,
+        {
+            "input_json": payload,
+            "output_schema_json": CaseStructuringDraft.model_json_schema(),
+        },
+    )
 
 
 def parse_case_structurer_payload(
@@ -243,16 +251,18 @@ def parse_case_structurer_payload(
         )
 
 
-def _load_case_structurer_prompt_contract() -> str:
+def _should_use_case_structurer_fallback_prompt() -> bool:
     try:
-        prompt_contract = DEFAULT_PROMPT_PATH.read_text(encoding="utf-8").strip()
+        prompt_contract = DEFAULT_PROMPT_PATH.read_text(encoding="utf-8")
     except OSError:
-        return DEFAULT_PROMPT_CONTRACT.strip()
+        return True
 
-    if not prompt_contract:
-        return DEFAULT_PROMPT_CONTRACT.strip()
+    return not prompt_contract.strip()
 
-    return prompt_contract
+
+def _build_case_structurer_fallback_prompt(payload: dict[str, object]) -> str:
+    payload_json = json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True)
+    return f"{DEFAULT_PROMPT_CONTRACT.rstrip()}\n\n### Input JSON\n{payload_json}\n"
 
 
 def _serialize_stage_metadata(input: CaseStructurerInput) -> dict[str, object]:

@@ -37,8 +37,8 @@ You are an Evidence Atomizer adapter, not a diagnostician.
 - Do not include explanatory prose.
 - Ensure keys match EvidenceAtomizationDraft-compatible schema.
 
-## Output Schema JSON
+### Output Schema JSON
 {{output_schema_json}}
 
-## Input JSON
+### Input JSON
 {{input_json}}

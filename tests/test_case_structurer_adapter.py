@@ -117,9 +117,22 @@ def test_valid_input_builds_prompt_with_source_documents_and_stage_metadata() ->
     prompt = build_case_structurer_prompt(input_model)
 
     assert "### Input JSON" in prompt
+    assert "### Output Schema JSON" in prompt
     assert '"stage_id": "stage-001"' in prompt
     assert '"source_doc_id": "doc-001"' in prompt
     assert "Patient has chronic cough for 8 years." in prompt
+    assert '"title": "CaseStructuringDraft"' in prompt
+
+
+def test_case_structurer_prompt_renders_template_without_unresolved_placeholders_or_duplicate_input() -> None:
+    prompt = build_case_structurer_prompt(_base_input())
+
+    assert "{{" not in prompt
+    assert "}}" not in prompt
+    assert prompt.count("### Input JSON") == 1
+    assert prompt.count('"stage_metadata"') == 1
+    assert '"source_documents": [' in prompt
+    assert '"properties": {' in prompt
 
 
 def test_prompt_excludes_hypothesis_diagnosis_action_arbitration_payload_fields() -> None:

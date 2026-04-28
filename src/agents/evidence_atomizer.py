@@ -16,6 +16,7 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_valida
 
 from ..adapters.case_structuring import CaseStructuringDraft
 from ..adapters.evidence_atomization import EvidenceAtomizationDraft
+from ..prompts import render_template_file
 from ..provenance.model import EXTRACTION_ACTIVITY_ID_PATTERN
 from ..schemas.common import (
     CASE_ID_PATTERN,
@@ -212,7 +213,6 @@ class EvidenceAtomizerResult(BaseModel):
 def build_evidence_atomizer_prompt(input: EvidenceAtomizerInput) -> str:
     """Build one Evidence Atomizer prompt from stage metadata and source docs."""
 
-    prompt_contract = _load_evidence_atomizer_prompt_contract()
     payload: dict[str, object] = {
         "stage_metadata": _serialize_stage_metadata(input.stage_context),
         "source_documents": [
@@ -225,8 +225,16 @@ def build_evidence_atomizer_prompt(input: EvidenceAtomizerInput) -> str:
             input.case_structuring_draft
         )
 
-    payload_json = json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True)
-    return f"{prompt_contract.rstrip()}\n\n### Input JSON\n{payload_json}\n"
+    if _should_use_evidence_atomizer_fallback_prompt():
+        return _build_evidence_atomizer_fallback_prompt(payload)
+
+    return render_template_file(
+        DEFAULT_PROMPT_PATH,
+        {
+            "input_json": payload,
+            "output_schema_json": EvidenceAtomizationDraft.model_json_schema(),
+        },
+    )
 
 
 def parse_evidence_atomizer_payload(
@@ -267,16 +275,18 @@ def parse_evidence_atomizer_payload(
         )
 
 
-def _load_evidence_atomizer_prompt_contract() -> str:
+def _should_use_evidence_atomizer_fallback_prompt() -> bool:
     try:
-        prompt_contract = DEFAULT_PROMPT_PATH.read_text(encoding="utf-8").strip()
+        prompt_contract = DEFAULT_PROMPT_PATH.read_text(encoding="utf-8")
     except OSError:
-        return DEFAULT_PROMPT_CONTRACT.strip()
+        return True
 
-    if not prompt_contract:
-        return DEFAULT_PROMPT_CONTRACT.strip()
+    return not prompt_contract.strip()
 
-    return prompt_contract
+
+def _build_evidence_atomizer_fallback_prompt(payload: dict[str, object]) -> str:
+    payload_json = json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True)
+    return f"{DEFAULT_PROMPT_CONTRACT.rstrip()}\n\n### Input JSON\n{payload_json}\n"
 
 
 def _serialize_stage_metadata(stage_context: StageContext) -> dict[str, object]:
