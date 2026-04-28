@@ -591,3 +591,15 @@
 	- `python -m pytest -q tests/test_phase1_trace.py tests/test_case_structurer_agent.py tests/test_evidence_atomizer_agent.py`
 	- `python -m pytest -q`
 - 边界说明: 本次仅记录 Issue 5 trace events；未新增真实 provider/API-key 集成，未修改 retry policy、validators、state writer、storage、board schema、orchestration 或 pipeline，trace 不持久化 authoritative state。
+
+- 任务: Phase 1 LLM-backed pipeline Issue 6（free-text intake builder）
+- 变更文件:
+	- src/intake/free_text.py
+	- src/intake/__init__.py
+	- tests/test_free_text_intake_builder.py
+	- docs/devlog.md
+- 变更原因: 新增 free-text intake facade，将外部 raw free text 转换为 pre-authoritative `RawInputEvent` 与 `SourceDocument`，复用现有 raw intake gate、registry helpers 与 intake bundle validation；保持 intake 与 StageContext、agent input、authoritative state 写入解耦。
+- 验证方式:
+	- `python -m pytest -q tests/test_free_text_intake_builder.py tests/test_intake_gate.py tests/test_skeleton_imports.py`
+	- `python -m pytest -q`
+- 边界说明: 本次仅实现 Issue 6 intake builder；未调用 LLM runner，未创建 CaseStructurerAgent/EvidenceAtomizerAgent，未写入 authoritative state，未修改 validators、state writer、storage、board schema、orchestration 或 pipeline。

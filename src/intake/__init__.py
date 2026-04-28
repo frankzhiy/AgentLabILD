@@ -1,5 +1,10 @@
 """Raw-text intake package exports."""
 
+from .free_text import (
+    FreeTextIntakeBuilder,
+    FreeTextIntakeResult,
+    build_free_text_intake,
+)
 from .intake_gate import attempt_raw_intake
 from .registry import (
     build_input_event_id,
@@ -13,7 +18,10 @@ from .validators import (
 )
 
 __all__ = [
+    "FreeTextIntakeBuilder",
+    "FreeTextIntakeResult",
     "attempt_raw_intake",
+    "build_free_text_intake",
     "build_input_event_id",
     "build_source_doc_id",
     "create_source_document_from_raw_input",
