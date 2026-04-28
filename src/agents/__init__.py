@@ -1,7 +1,7 @@
-"""Adapter-agent package boundary for Phase 1.
+"""Backward-compatible adapter export package for Phase 1.
 
-Agents in this package are non-authoritative adapters that produce structured
-drafts. They must not bypass validator-gated write mechanisms.
+True LLM agents are introduced separately. Current names re-export adapter
+contracts for old import paths.
 """
 
 from .case_structurer import (

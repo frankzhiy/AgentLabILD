@@ -7,7 +7,7 @@ from datetime import datetime
 import pytest
 from pydantic import ValidationError
 
-from src.agents.evidence_atomizer import (
+from src.adapters.evidence_atomizer_adapter import (
     EvidenceAtomizerInput,
     EvidenceAtomizerStatus,
     build_evidence_atomizer_prompt,

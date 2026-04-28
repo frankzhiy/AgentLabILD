@@ -545,3 +545,20 @@
 	- `python -m pytest -q tests/test_llm_schema_export.py tests/test_llm_retry_policy.py tests/test_llm_structured_runner.py`
 	- `python -m pytest -q`
 - 边界说明: 本次仅实现 Issue 2；未创建真实 agent，未迁移 adapter，未新增 provider API-key 依赖，未创建 authoritative `Phase1StateEnvelope`，未修改 validators、state writer、storage、board schema 或 pipeline。
+
+- 任务: Phase 1 LLM-backed pipeline Issue 3（adapter rename/migration compatibility path）
+- 变更文件:
+	- src/adapters/case_structurer_adapter.py
+	- src/adapters/evidence_atomizer_adapter.py
+	- src/adapters/__init__.py
+	- src/agents/case_structurer.py
+	- src/agents/evidence_atomizer.py
+	- src/agents/__init__.py
+	- tests/test_case_structurer_adapter.py
+	- tests/test_evidence_atomizer_adapter.py
+	- tests/test_adapter_import_compatibility.py
+	- docs/devlog.md
+- 变更原因: 将当前 Case Structurer / Evidence Atomizer 的 input/result/status、prompt builder、payload parser 与边界检查从 `src.agents` 迁移到显式 adapter 模块；旧 `src.agents.*` 路径暂时保留为薄 re-export 兼容层，避免现有调用方断裂。
+- 验证方式:
+	- `python -m pytest -q`
+- 边界说明: 本次仅迁移 adapter 归属；未新增 LLM provider 调用、真实 agent、state writer 调用、authoritative state 构造、HypothesisBoardBootstrapper、validators/storage/board schema/pipeline 修改。

@@ -7,7 +7,7 @@ from datetime import datetime
 import pytest
 from pydantic import ValidationError
 
-from src.agents.case_structurer import (
+from src.adapters.case_structurer_adapter import (
     CaseStructurerInput,
     CaseStructurerStatus,
     build_case_structurer_prompt,
