@@ -575,3 +575,19 @@
 - 验证方式:
 	- `python -m pytest -q`
 - 边界说明: 本次未新增真实 provider/API-key 集成，未修改 adapters、validators、state writer、storage、board schema、prompt templates、orchestration 或 pipeline；adapter 仍负责输出边界检查，agent 不持久化 state。
+
+- 任务: Phase 1 LLM-backed pipeline Issue 5（retry/failure/manual_review trace logging）
+- 变更文件:
+	- src/tracing/phase1_trace.py
+	- src/tracing/__init__.py
+	- src/agents/case_structurer_agent.py
+	- src/agents/evidence_atomizer_agent.py
+	- tests/test_phase1_trace.py
+	- tests/test_case_structurer_agent.py
+	- tests/test_evidence_atomizer_agent.py
+	- docs/devlog.md
+- 变更原因: 新增 Phase 1 adapter-agent runtime trace/audit helper，记录 prompt handoff、structured runner result、adapter parser result 与 manual_review/failure decision，同时默认只保存 artifact hash/id 与状态元数据，不保存完整 prompt、原始临床文本或完整模型输出。
+- 验证方式:
+	- `python -m pytest -q tests/test_phase1_trace.py tests/test_case_structurer_agent.py tests/test_evidence_atomizer_agent.py`
+	- `python -m pytest -q`
+- 边界说明: 本次仅记录 Issue 5 trace events；未新增真实 provider/API-key 集成，未修改 retry policy、validators、state writer、storage、board schema、orchestration 或 pipeline，trace 不持久化 authoritative state。

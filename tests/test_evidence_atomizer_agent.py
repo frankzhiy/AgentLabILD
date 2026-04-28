@@ -27,6 +27,11 @@ from src.schemas.evidence import (
 )
 from src.schemas.intake import SourceDocumentType
 from src.schemas.stage import InfoModality, StageType, TriggerType
+from src.tracing.phase1_trace import (
+    InMemoryPhase1TraceRecorder,
+    Phase1TraceStatus,
+    Phase1TraceStep,
+)
 
 
 @dataclass
@@ -221,6 +226,46 @@ def test_evidence_atomizer_agent_success_path_calls_runner_and_adapter_parser() 
     }
 
 
+def test_evidence_atomizer_agent_emits_trace_events_on_success() -> None:
+    fake_runner = FakeStructuredRunner(
+        StructuredLLMRunnerResult(
+            status=StructuredLLMStatus.SUCCESS,
+            parsed=_valid_evidence_atomization_payload(),
+            attempts=1,
+            raw_response_id="response-001",
+            model="fake-model",
+        )
+    )
+    recorder = InMemoryPhase1TraceRecorder()
+    agent = EvidenceAtomizerAgent(
+        fake_runner,  # type: ignore[arg-type]
+        trace_recorder=recorder,
+    )
+
+    result = agent.run(_base_input())
+
+    events = recorder.list_events()
+    assert result.status is EvidenceAtomizerStatus.ACCEPTED
+    assert [event.step_name for event in events] == [
+        Phase1TraceStep.PROMPT_HANDOFF,
+        Phase1TraceStep.RUNNER_RESULT,
+        Phase1TraceStep.ADAPTER_RESULT,
+    ]
+    assert [event.status for event in events] == [
+        Phase1TraceStatus.HANDED_OFF,
+        Phase1TraceStatus.SUCCESS,
+        Phase1TraceStatus.SUCCESS,
+    ]
+    assert events[0].artifact_hashes[0].startswith("prompt:sha256:")
+    assert events[1].attempt_count == 1
+    assert events[1].model_name == "fake-model"
+    assert events[1].artifact_ids == ("response-001",)
+    assert events[2].artifact_ids == ("atomization_draft-001",)
+    assert "Patient has chronic cough" not in "".join(
+        event.model_dump_json() for event in events
+    )
+
+
 def test_evidence_atomizer_agent_returns_adapter_rejection_without_exception() -> None:
     payload = _valid_evidence_atomization_payload()
     payload["hypotheses"] = ("hyp-001",)
@@ -261,6 +306,42 @@ def test_evidence_atomizer_agent_runner_failure_returns_manual_review_without_dr
     assert result.errors == ("runner failed",)
 
 
+def test_evidence_atomizer_agent_emits_trace_events_on_runner_failure() -> None:
+    fake_runner = FakeStructuredRunner(
+        StructuredLLMRunnerResult(
+            status=StructuredLLMStatus.FAILURE,
+            parsed=None,
+            attempts=2,
+            errors=("runner failed",),
+            failure_kind=StructuredLLMFailureKind.TRANSPORT,
+            model="fake-model",
+        )
+    )
+    recorder = InMemoryPhase1TraceRecorder()
+    agent = EvidenceAtomizerAgent(
+        fake_runner,  # type: ignore[arg-type]
+        trace_recorder=recorder,
+    )
+
+    result = agent.run(_base_input())
+
+    events = recorder.list_events()
+    assert result.status is EvidenceAtomizerStatus.MANUAL_REVIEW
+    assert [event.step_name for event in events] == [
+        Phase1TraceStep.PROMPT_HANDOFF,
+        Phase1TraceStep.RUNNER_RESULT,
+        Phase1TraceStep.MANUAL_REVIEW_DECISION,
+    ]
+    assert [event.status for event in events] == [
+        Phase1TraceStatus.HANDED_OFF,
+        Phase1TraceStatus.FAILURE,
+        Phase1TraceStatus.MANUAL_REVIEW,
+    ]
+    assert events[1].attempt_count == 2
+    assert events[1].error_messages == ("runner failed",)
+    assert events[2].error_messages == ("runner failed",)
+
+
 def test_evidence_atomizer_agent_runner_manual_review_returns_manual_review_without_draft() -> None:
     fake_runner = FakeStructuredRunner(
         StructuredLLMRunnerResult(
@@ -278,3 +359,37 @@ def test_evidence_atomizer_agent_runner_manual_review_returns_manual_review_with
     assert result.status is EvidenceAtomizerStatus.MANUAL_REVIEW
     assert result.draft is None
     assert result.errors == ("needs review",)
+
+
+def test_evidence_atomizer_agent_emits_trace_events_on_runner_manual_review() -> None:
+    fake_runner = FakeStructuredRunner(
+        StructuredLLMRunnerResult(
+            status=StructuredLLMStatus.MANUAL_REVIEW,
+            parsed=None,
+            attempts=1,
+            errors=("needs review",),
+            failure_kind=StructuredLLMFailureKind.EMPTY_RESPONSE,
+        )
+    )
+    recorder = InMemoryPhase1TraceRecorder()
+    agent = EvidenceAtomizerAgent(
+        fake_runner,  # type: ignore[arg-type]
+        trace_recorder=recorder,
+    )
+
+    result = agent.run(_base_input())
+
+    events = recorder.list_events()
+    assert result.status is EvidenceAtomizerStatus.MANUAL_REVIEW
+    assert [event.step_name for event in events] == [
+        Phase1TraceStep.PROMPT_HANDOFF,
+        Phase1TraceStep.RUNNER_RESULT,
+        Phase1TraceStep.MANUAL_REVIEW_DECISION,
+    ]
+    assert [event.status for event in events] == [
+        Phase1TraceStatus.HANDED_OFF,
+        Phase1TraceStatus.MANUAL_REVIEW,
+        Phase1TraceStatus.MANUAL_REVIEW,
+    ]
+    assert events[1].error_messages == ("needs review",)
+    assert events[2].error_messages == ("needs review",)
